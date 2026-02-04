@@ -1,0 +1,11 @@
+{
+    "id": "CaptainRedstone.MirosOverseers",
+    "name": "Miros Overseers",
+    "version": "1.0.0",
+    "authors": "Captain Redstone",
+    "description": "Makes all overseers periodically fire miros vulture laser beams wherever they happen to be looking. Highly configurable, and Meadow-compatible!",
+    "requirements": ["moreslugcats"],
+    "requirements_names": ["More Slugcats Expansion"],
+    "tags": [ "Game Mechanics" ],
+    "checksum_override_version": true
+}
