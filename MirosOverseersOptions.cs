@@ -205,7 +205,7 @@ public class MirosOverseersOptions : OptionInterface
             ],
             [
                 AdjustOverseerSpawnsCheckbox = new OpCheckBox(AdjustOverseerSpawns, 0f, 0f) { description = "Toggles whether or not the following modifiers should be applied or not." },
-                new OpLabel(0f, 0f, "Modify overseer spawnrates?") { description = "Toggles whether or not the following modifieres should be applied or not." },
+                new OpLabel(0f, 0f, "Modify overseer spawnrates?") { description = "Toggles whether or not the following modifiers should be applied or not." },
             ],
             [
                 OverseersMinPlusTextbox = new OpTextBox(OverseersMinPlus, new Vector2(0f, 0f), 0f) { description = "Adjusts the minimum number of \"wild\" overseers that can spawn per cycle. The first value adds to the current region, then the second value multiplies it." },
@@ -232,8 +232,8 @@ public class MirosOverseersOptions : OptionInterface
                 new OpLabel(0f, 0f, "Aiming speed") { description = "Controls how long the laser takes to fire (Miros Vultures take 4.75 seconds). Allow me to read your mind; yes this supports 0, and no that's not a good idea." },
             ],
             [
-                ArtificerVulnerabilityCheckbox = new OpCheckBox(ArtificerVulnerability, 0f, 0f) { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune to other explosions." },
-                new OpLabel(0f, 0f, "TODO Laser kills Artificer") { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune to other explosions." },
+                ArtificerVulnerabilityCheckbox = new OpCheckBox(ArtificerVulnerability, 0f, 0f) { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune (or technically 5x resistant) to other types of explosions." },
+                new OpLabel(0f, 0f, "Overseer lasers can kill Artificer?") { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune (or technically 5x resistant) to other types of explosions." },
             ],
 
             [new OpLabel(0f, 0f, "Overseer immunities:")],
@@ -308,7 +308,7 @@ public class MirosOverseersOptions : OptionInterface
         Vector2 scrollBoxEdgePadding = new(34f, 29f); //These exact numbers line up the title with the mod name text on the description screen.
         Vector2 opHoldButtonSize = new(75f, 25f);
 
-        inputArray = [.. inputArray.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true) { Hidden = true}])]; //"mod.name" pulls from your modinfo.json.
+        inputArray = [.. inputArray.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; //"mod.name" pulls from your modinfo.json.
 
         float currentHeight = 0f;        //Normally we should start at our target height, but thanks to OpScrollBox we don't *know* what our target height is until AFTER generation.
         List<UIelement> outputList = []; //So, start at 0, work into the negatives, then just shove everything up when we're done. This is horrible but I don't see a better option.

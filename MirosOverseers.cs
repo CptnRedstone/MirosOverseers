@@ -45,12 +45,12 @@ public partial class MirosOverseers : BaseUnityPlugin
     }
 
     //Todo thumbnail
-    //Review sound loop discard issue
+    //Review sound loop discard issue (definite for meadow)
     //STUPID CONTROLLER NAVIGATION
     //Use a different type of scroller? Does that fix the wrapper selection issue?
     //Lasers turn red when disappearing
-
-    //Hook up the settings
+    //Lasers graphics have a max length
+    //More specifically prevent overseers from killing each other but allow other explosions?
 
     //Meadow compat and remix setting sync
 
@@ -114,7 +114,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21));
             cursor.Index++;
             cursor.Emit(OpCodes.Pop);
-            cursor.EmitDelegate(delegate () { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
+            cursor.EmitDelegate(delegate() { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
         }
         catch (Exception ex) { modInstance.Logger.LogError(ex); }
     }
@@ -138,12 +138,23 @@ public partial class MirosOverseers : BaseUnityPlugin
     }
     public void IL_Explosion_Update(ILContext il)
     {
-
+        //if (optionsInstance.ArtificerVulnerability.Value && sourceObject is Overseer) {num8 *= 5}
         try
         {
-            //PhysicalObject physicalObject = null;
             ILCursor cursor = new(il);
-            //cursor.GotoNext(MoveType.Before, x => x.MatchStfld(nameof(PhysicalObject), nameof(Explosion.sourceObject), out physicalObject));
+            ILLabel stloc_label = cursor.DefineLabel();
+            int stloc_int = 0;
+            cursor.GotoNext(MoveType.After, x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.damage)), x => x.MatchStloc(out stloc_int));
+            cursor.GotoNext(MoveType.After, x => x.MatchLdloc(stloc_int), x => x.MatchLdcR4(0.2f), x => x.MatchMul());
+            cursor.EmitDelegate(delegate() { return optionsInstance.ArtificerVulnerability.Value; });
+            cursor.Emit(OpCodes.Brfalse, stloc_label); //Brnull
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject))); //Thanks Yuzugamer for the help!
+            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
+            cursor.Emit(OpCodes.Brfalse, stloc_label); //Brnull
+            cursor.Emit(OpCodes.Ldc_R4, 5f);
+            cursor.Emit(OpCodes.Mul);
+            cursor.MarkLabel(stloc_label);
         }
         catch (Exception ex) { modInstance.Logger.LogError(ex); }
     }
