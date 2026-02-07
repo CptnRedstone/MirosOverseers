@@ -26,6 +26,7 @@ public class MirosOverseersOptions : OptionInterface
     public readonly Configurable<float> OverseerFiringCooldown;
     public readonly Configurable<float> OverseerAimingDuration;
     public readonly Configurable<bool> ArtificerVulnerability;
+    public readonly Configurable<bool> OverseersOverseerImmune;
     public readonly Configurable<bool> OverseersSpearImmune;
     public readonly Configurable<bool> OverseersExplosionImmune;
     public readonly Configurable<bool> OverseersImmortal;
@@ -50,6 +51,7 @@ public class MirosOverseersOptions : OptionInterface
     public OpTextBox OverseerFiringCooldownTextbox;
     public OpTextBox OverseerAimingDurationTextbox;
     public OpCheckBox ArtificerVulnerabilityCheckbox;
+    public OpCheckBox OverseersOverseerImmuneCheckbox;
     public OpCheckBox OverseersSpearImmuneCheckbox;
     public OpCheckBox OverseersExplosionImmuneCheckbox;
     public OpCheckBox OverseersImmortalCheckbox;
@@ -82,6 +84,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseerFiringCooldown = config.Bind("OverseerFiringCooldown", 2f);
         OverseerAimingDuration = config.Bind("OverseerAimingDuration", 5f);
         ArtificerVulnerability = config.Bind("ArtificerVulnerability", true);
+        OverseersOverseerImmune = config.Bind("OverseersOverseerImmune", false);
         OverseersSpearImmune = config.Bind("OverseersSpearImmune", false);
         OverseersExplosionImmune = config.Bind("OverseersExplosionImmune", false);
         OverseersImmortal = config.Bind("OverseersImmortal", false);
@@ -89,8 +92,8 @@ public class MirosOverseersOptions : OptionInterface
         ColorChangingLaser = config.Bind("ColorChangingLaser", false);
         LightweightExplosions = config.Bind("LightweightExplosions", false);
         DisableTinnitus = config.Bind("DisableTinnitus", false);
-        DisableDuringCutscenes = config.Bind("DisableDuringCutscenes", false);
-        DisableDuringForcedInput = config.Bind("DisableDuringForcedInput", false);
+        DisableDuringCutscenes = config.Bind("DisableDuringCutscenes", true);
+        DisableDuringForcedInput = config.Bind("DisableDuringForcedInput", true);
         DisableNearPuppets = config.Bind("DisableNearPuppets", false);
         DisableDuringDialogue = config.Bind("DisableDuringDialogue", false);
     }
@@ -105,6 +108,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseerFiringCooldownTextbox.value = "3";
         OverseerAimingDurationTextbox.value = "5";
         ArtificerVulnerabilityCheckbox.value = "false";
+        OverseersOverseerImmuneCheckbox.value = "false";
         OverseersSpearImmuneCheckbox.value = "false";
         OverseersExplosionImmuneCheckbox.value = "false";
         OverseersImmortalCheckbox.value = "false";
@@ -128,6 +132,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseerFiringCooldownTextbox.value = "2";
         OverseerAimingDurationTextbox.value = "5";
         ArtificerVulnerabilityCheckbox.value = "true";
+        OverseersOverseerImmuneCheckbox.value = "false";
         OverseersSpearImmuneCheckbox.value = "false";
         OverseersExplosionImmuneCheckbox.value = "false";
         OverseersImmortalCheckbox.value = "false";
@@ -149,10 +154,11 @@ public class MirosOverseersOptions : OptionInterface
         OverseersMaxTimesTextbox.value = "3";
         OverseerReaimCooldownTextbox.value = "0.25";
         OverseerFiringCooldownTextbox.value = "0";
-        OverseerAimingDurationTextbox.value = "3";
+        OverseerAimingDurationTextbox.value = "4";
         ArtificerVulnerabilityCheckbox.value = "true";
+        OverseersOverseerImmuneCheckbox.value = "true";
         OverseersSpearImmuneCheckbox.value = "false";
-        OverseersExplosionImmuneCheckbox.value = "true";
+        OverseersExplosionImmuneCheckbox.value = "false";
         OverseersImmortalCheckbox.value = "false";
         //Don't adjust visual stuff
         DisableDuringCutscenesCheckbox.value = "false";
@@ -238,12 +244,16 @@ public class MirosOverseersOptions : OptionInterface
 
             [new OpLabel(0f, 0f, "Overseer immunities:")],
             [
-                OverseersSpearImmuneCheckbox = new OpCheckBox(OverseersSpearImmune, 0f, 0f) { description = "Makes all overseers immune to spears. Spearmaster's red Iggy (Riggy?) is immune to spears by default." },
-                new OpLabel(0f, 0f, "Are overseers immune to spears?") { description = "Makes all overseers immune to spears. Spearmaster's red Iggy (Riggy?) is immune to spears by default." },
+                OverseersOverseerImmuneCheckbox = new OpCheckBox(OverseersOverseerImmune, 0f, 0f) { description = "Prevents overseers' explosions from damaging other overseers. Overseers are automatically immune to their own explosions." },
+                new OpLabel(0f, 0f, "Are overseers immune to each other?") { description = "Prevents overseers' explosions from damaging other overseers. Overseers are automatically immune to their own explosions." },
             ],
             [
-                OverseersExplosionImmuneCheckbox = new OpCheckBox(OverseersExplosionImmune, 0f, 0f) { description = "Makes all overseers immune to explosion damage. Overseers are automatically immune to their own explosions, but not other overseers' explosions." },
-                new OpLabel(0f, 0f, "Are overseers immune to explosions?") { description = "Makes overseers immune to explosion damage. Overseers are automatically immune to their own explosions, but not other overseers' explosions." },
+                OverseersSpearImmuneCheckbox = new OpCheckBox(OverseersSpearImmune, 0f, 0f) { description = "Makes all overseers immune to rocks, spears, and any other similar thrown weapons. Spearmaster's red Iggy (Riggy?) is immune to spears by default." },
+                new OpLabel(0f, 0f, "Are overseers immune to spears?") { description = "Makes all overseers immune to rocks, spears, and any other similar thrown weapons. Spearmaster's red Iggy (Riggy?) is immune to spears by default." },
+            ],
+            [
+                OverseersExplosionImmuneCheckbox = new OpCheckBox(OverseersExplosionImmune, 0f, 0f) { description = "Makes all overseers immune to all explosion damage. Overseers are automatically immune to their own explosions, but not other overseers' explosions." },
+                new OpLabel(0f, 0f, "Are overseers immune to explosions?") { description = "Makes overseers immune to all explosion damage. Overseers are automatically immune to their own explosions, but not other overseers' explosions." },
             ],
             [
                 OverseersImmortalCheckbox = new OpCheckBox(OverseersImmortal, 0f, 0f) { description = "Makes all overseers completely immortal, for all you masochists out there." },
@@ -260,8 +270,8 @@ public class MirosOverseersOptions : OptionInterface
                 new OpLabel(0f, 0f, "Change the laser sight's color based on charge status?") { description = "Makes the laser sight change color alongside the target glow. Miros laser effects are designed for dark environments and may be hard to see elsewhere." },
             ],
             [
-                LightweightExplosionsCheckbox = new OpCheckBox(LightweightExplosions, 0f, 0f) { description = "Removes certain visual effects from overseer laser explosions that contribute greatly to lag." },
-                new OpLabel(0f, 0f, "Lightweight laser explosion VFX?") { description = "Removes certain visual effects from overseer laser explosions that contribute greatly to lag." },
+                LightweightExplosionsCheckbox = new OpCheckBox(LightweightExplosions, 0f, 0f) { description = "Removes certain visual effects from overseer laser explosions that contribute greatly to their lag at large scale." },
+                new OpLabel(0f, 0f, "Lightweight laser explosion VFX?") { description = "Removes certain visual effects from overseer laser explosions that contribute greatly to their lag at large scale." },
             ],
             [
                 DisableTinnitusCheckbox = new OpCheckBox(DisableTinnitus, 0f, 0f) { description = "Overseer laser explosions no longer give you tinnitus, or deafen you whatsoever. Other explosions will still deafen you as normal." },
@@ -308,7 +318,7 @@ public class MirosOverseersOptions : OptionInterface
         Vector2 scrollBoxEdgePadding = new(34f, 29f); //These exact numbers line up the title with the mod name text on the description screen.
         Vector2 opHoldButtonSize = new(75f, 25f);
 
-        inputArray = [.. inputArray.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; //"mod.name" pulls from your modinfo.json.
+        inputArray = [.. inputArray.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; //"mod.name" pulls from the modinfo.json.
 
         float currentHeight = 0f;        //Normally we should start at our target height, but thanks to OpScrollBox we don't *know* what our target height is until AFTER generation.
         List<UIelement> outputList = []; //So, start at 0, work into the negatives, then just shove everything up when we're done. This is horrible but I don't see a better option.

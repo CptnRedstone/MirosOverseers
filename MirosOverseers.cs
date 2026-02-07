@@ -10,6 +10,7 @@ using System.Security.Permissions;
 using UnityEngine;
 using Menu.Remix.MixedUI.ValueTypes;
 using System.Linq;
+using System.Collections.Generic;
 
 #pragma warning disable CS0618
 
@@ -44,15 +45,17 @@ public partial class MirosOverseers : BaseUnityPlugin
         modInstance.Logger.LogInfo(data);
     }
 
+    //Inspectors worth?
+    //Hologram shader that doesn't fade out?
+
     //Todo thumbnail
-    //Review sound loop discard issue (definite for meadow)
     //STUPID CONTROLLER NAVIGATION
     //Use a different type of scroller? Does that fix the wrapper selection issue?
     //Lasers turn red when disappearing
     //Lasers graphics have a max length
-    //More specifically prevent overseers from killing each other but allow other explosions?
 
     //Meadow compat and remix setting sync
+    //Review sound loop discard issue (definite for meadow, spectator bug?)
 
     private bool IsInit;
     private void RainWorldOnOnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -131,23 +134,47 @@ public partial class MirosOverseers : BaseUnityPlugin
     }
     public void On_Overseer_Violence(On.Overseer.orig_Violence orig, Overseer self, BodyChunk source, Vector2? directionAndMomentum, BodyChunk hitChunk, PhysicalObject.Appendage.Pos hitAppendage, Creature.DamageType type, float damage, float stunBonus)
     {
-        if ((type != Creature.DamageType.Explosion || !optionsInstance.OverseersExplosionImmune.Value))
+        if (!(type == Creature.DamageType.Explosion && optionsInstance.OverseersExplosionImmune.Value))
         {
             orig(self, source, directionAndMomentum, hitChunk, hitAppendage, type, damage, stunBonus);
         }
     }
     public void IL_Explosion_Update(ILContext il)
     {
-        //if (optionsInstance.ArtificerVulnerability.Value && sourceObject is Overseer) {num8 *= 5}
         try
         {
             ILCursor cursor = new(il);
+            int damage_float = 0;
+
+            //Find the loop ints; I don't trust hardcoding them.
+            int loop_j = 0;
+            int loop_k = 0;
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(nameof(UpdatableAndDeletable), nameof(UpdatableAndDeletable.room)),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.backgroundNoise)),
+                x => x.MatchCallvirt(nameof(Room), nameof(Room.MakeBackgroundNoise)));
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdcI4(0),
+                x => x.MatchStloc(out loop_j),
+                x => x.MatchBr(out _)); //Because apparently the only possible reason to match a br is to read the label.
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdcI4(0),
+                x => x.MatchStloc(out loop_k),
+                x => x.MatchBr(out _));
+
+            //if (optionsInstance.ArtificerVulnerability.Value && sourceObject is Overseer) {num8 *= 5;}
             ILLabel stloc_label = cursor.DefineLabel();
-            int stloc_int = 0;
-            cursor.GotoNext(MoveType.After, x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.damage)), x => x.MatchStloc(out stloc_int));
-            cursor.GotoNext(MoveType.After, x => x.MatchLdloc(stloc_int), x => x.MatchLdcR4(0.2f), x => x.MatchMul());
-            cursor.EmitDelegate(delegate() { return optionsInstance.ArtificerVulnerability.Value; });
-            cursor.Emit(OpCodes.Brfalse, stloc_label); //Brnull
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.damage)),
+                x => x.MatchStloc(out damage_float));
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdloc(damage_float),
+                x => x.MatchLdcR4(0.2f),
+                x => x.MatchMul());
+            cursor.EmitDelegate(delegate () { return optionsInstance.ArtificerVulnerability.Value; });
+            cursor.Emit(OpCodes.Brfalse, stloc_label);
             cursor.Emit(OpCodes.Ldarg_0);
             cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject))); //Thanks Yuzugamer for the help!
             cursor.Emit(OpCodes.Isinst, typeof(Overseer));
@@ -155,6 +182,31 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.Emit(OpCodes.Ldc_R4, 5f);
             cursor.Emit(OpCodes.Mul);
             cursor.MarkLabel(stloc_label);
+
+            //if (optionsInstance.OverseersOverseerImmune.Value && sourceObject is Overseer && room.physicalObjects[j][k] is Overseer) {num8 = 0;}
+            //cursor.GotoNext(MoveType.After, x => x.MatchStloc(damage_float)); //Conveniently we're already in a good spot, just need to pass the stloc.s.
+            cursor.GotoNext();
+            cursor.GotoNext();
+            cursor.GotoNext();
+            ILLabel violence_label = cursor.DefineLabel();
+            cursor.EmitDelegate(delegate () { return optionsInstance.OverseersOverseerImmune.Value; });
+            cursor.Emit(OpCodes.Brfalse, violence_label);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject)));
+            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
+            cursor.Emit(OpCodes.Brfalse, violence_label); //Brnull
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room)));
+            cursor.Emit(OpCodes.Ldfld, typeof(Room).GetField(nameof(Room.physicalObjects)));
+            cursor.Emit(OpCodes.Ldloc, loop_j);
+            cursor.Emit(OpCodes.Ldelem_Ref);
+            cursor.Emit(OpCodes.Ldloc, loop_k);
+            cursor.Emit(OpCodes.Callvirt, typeof(List<PhysicalObject>).GetMethod("get_Item"));
+            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
+            cursor.Emit(OpCodes.Brfalse, violence_label); //Brnull
+            cursor.Emit(OpCodes.Ldc_R4, 0f);
+            cursor.Emit(OpCodes.Stloc, damage_float);
+            cursor.MarkLabel(violence_label);
         }
         catch (Exception ex) { modInstance.Logger.LogError(ex); }
     }
@@ -206,7 +258,7 @@ public partial class MirosOverseers : BaseUnityPlugin
     {
         orig(self, eu);
 
-        self.canBeHitByWeapons = !optionsInstance.OverseersSpearImmune.Value; //As much as I hate it, it makes sense to have vanilla change this in Update() since it does need to change based on zip status.
+        self.canBeHitByWeapons &= !optionsInstance.OverseersSpearImmune.Value; //As much as I hate it, it makes sense to have vanilla change this in Update() since it does need to change based on zip status.
 
         int laserReaimCooldown = Math.Max((int)(optionsInstance.OverseerReaimCooldown.Value * 40), 0);
         int laserFiringCooldown = Math.Max((int)(optionsInstance.OverseerFiringCooldown.Value * 40), 0);
