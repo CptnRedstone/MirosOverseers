@@ -40,10 +40,6 @@ public partial class MirosOverseers : BaseUnityPlugin
         modInstance = this;
         On.RainWorld.OnModsInit += RainWorldOnOnModsInit;
     }
-    public void LogInfo(object data)
-    {
-        modInstance.Logger.LogInfo(data);
-    }
 
     //Inspectors worth?
     //Hologram shader that doesn't fade out?
@@ -173,6 +169,7 @@ public partial class MirosOverseers : BaseUnityPlugin
                 x => x.MatchLdloc(damage_float),
                 x => x.MatchLdcR4(0.2f),
                 x => x.MatchMul());
+            cursor.MoveAfterLabels(); //I was told this helps with mod compat.
             cursor.EmitDelegate(delegate () { return optionsInstance.ArtificerVulnerability.Value; });
             cursor.Emit(OpCodes.Brfalse, stloc_label);
             cursor.Emit(OpCodes.Ldarg_0);
@@ -184,11 +181,9 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.MarkLabel(stloc_label);
 
             //if (optionsInstance.OverseersOverseerImmune.Value && sourceObject is Overseer && room.physicalObjects[j][k] is Overseer) {num8 = 0;}
-            //cursor.GotoNext(MoveType.After, x => x.MatchStloc(damage_float)); //Conveniently we're already in a good spot, just need to pass the stloc.s.
-            cursor.GotoNext();
-            cursor.GotoNext();
-            cursor.GotoNext();
             ILLabel violence_label = cursor.DefineLabel();
+            cursor.GotoNext(MoveType.After, x => x.MatchLdarg(0)); //Conveniently we're already in a good spot, just need to pass the brfalse targets.
+            cursor.MoveAfterLabels();
             cursor.EmitDelegate(delegate () { return optionsInstance.OverseersOverseerImmune.Value; });
             cursor.Emit(OpCodes.Brfalse, violence_label);
             cursor.Emit(OpCodes.Ldarg_0);
