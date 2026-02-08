@@ -154,7 +154,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseersMaxTimesTextbox.value = "3";
         OverseerReaimCooldownTextbox.value = "0.25";
         OverseerFiringCooldownTextbox.value = "0";
-        OverseerAimingDurationTextbox.value = "4";
+        OverseerAimingDurationTextbox.value = "3";
         ArtificerVulnerabilityCheckbox.value = "true";
         OverseersOverseerImmuneCheckbox.value = "true";
         OverseersSpearImmuneCheckbox.value = "false";

@@ -41,7 +41,9 @@ public partial class MirosOverseers : BaseUnityPlugin
         On.RainWorld.OnModsInit += RainWorldOnOnModsInit;
     }
 
+    //-------------------------TODO-------------------------
     //Inspectors worth?
+    //Make iggy dreams play laser sfx?
     //Hologram shader that doesn't fade out?
 
     //Todo thumbnail
@@ -82,9 +84,10 @@ public partial class MirosOverseers : BaseUnityPlugin
     {
         orig(self, fresh);
 
+        modInstance.Logger.LogInfo("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
         modInstance.Logger.LogInfo("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
         modInstance.Logger.LogInfo("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
-        modInstance.Logger.LogInfo("Overseer Spawns Allowed: " + (!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
+        modInstance.Logger.LogInfo("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
         modInstance.Logger.LogInfo("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
         modInstance.Logger.LogInfo("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
         modInstance.Logger.LogInfo("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
@@ -107,13 +110,33 @@ public partial class MirosOverseers : BaseUnityPlugin
     }
     private void IL_Worldloader_Generate_Population(ILContext il)
     {
+        //try
+        //{
+        //    ILCursor cursor = new(il);
+        //    cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21));
+        //    cursor.MoveAfterLabels();
+        //    cursor.Index++;
+        //    cursor.Emit(OpCodes.Pop);
+        //    cursor.EmitDelegate(delegate() { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
+        //}
+        //catch (Exception ex) { modInstance.Logger.LogError(ex); }
+
         try
         {
             ILCursor cursor = new(il);
-            cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21));
-            cursor.Index++;
-            cursor.Emit(OpCodes.Pop);
-            cursor.EmitDelegate(delegate() { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
+            ILLabel jump_from = cursor.DefineLabel();
+            ILLabel jump_to = cursor.DefineLabel();
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdstr("================"),
+                x => x.MatchStelemRef(),
+                x => x.MatchCall(typeof(Custom), nameof(Custom.LogImportant)));
+            cursor.MoveAfterLabels();
+            cursor.MarkLabel(jump_from);
+            cursor.GotoNext(MoveType.After, x => x.MatchRet());
+            cursor.MarkLabel(jump_to);
+            cursor.GotoLabel(jump_from);
+            cursor.EmitDelegate(delegate() { return optionsInstance.GuaranteeWildOverseers.Value; });
+            cursor.Emit(OpCodes.Brtrue, jump_to);
         }
         catch (Exception ex) { modInstance.Logger.LogError(ex); }
     }
@@ -121,7 +144,7 @@ public partial class MirosOverseers : BaseUnityPlugin
     {
         orig(self, name, firstRoomIndex, regionNumber, game, timelineIndex);
         if (optionsInstance.GuaranteeIggy.Value) { self.regionParams.playerGuideOverseerSpawnChance = 999999999; }
-        if (optionsInstance.GuaranteeWildOverseers.Value) { self.regionParams.overseersSpawnChance = 999999999; }
+        //if (optionsInstance.GuaranteeWildOverseers.Value) { self.regionParams.overseersSpawnChance = 999999999; } //Superseded by IL
         if (optionsInstance.AdjustOverseerSpawns.Value)
         {
             self.regionParams.overseersMin = (int)((self.regionParams.overseersMin + optionsInstance.OverseersMinPlus.Value) * optionsInstance.OverseersMinTimes.Value);
