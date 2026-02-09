@@ -45,15 +45,15 @@ public partial class MirosOverseers : BaseUnityPlugin
         On.RainWorld.OnModsInit += RainWorldOnOnModsInit;
     }
 
-    //-------------------------TODO-------------------------
+    //-------------------------Future ideas-------------------------
     //Inspectors worth?
     //Make iggy dreams play laser sfx?
     //Hologram shader that doesn't fade out?
 
-    //Todo thumbnail
-    //STUPID CONTROLLER NAVIGATION
-    //Lasers turn red when disappearing
-    //Lasers graphics have a max length
+    //-------------------------TODO-------------------------
+    //Thumbnail
+
+    //STUPID SCROLLBOX WRAPPER GO AWAY
 
     //Meadow compat and remix setting sync
     //Review sound loop discard issue (definite for meadow, spectator bug?)
@@ -420,13 +420,16 @@ public partial class MirosOverseers : BaseUnityPlugin
             laserColor = optionsInstance.ColorChangingLaser.Value ? new Color(0f, 1f, 0.1f) : new Color(1f, 0.9f, 0f);
             lastLaserColor = laserColor;
             laserAimingDuration = Math.Max((int)(optionsInstance.OverseerAimingDuration.Value * 40), 0);
+            owner.cullRange = 2500f; //Prevents the laser graphic from getting culled in long rooms. 100f *appears* to be a screen? Hard to tell tbh. Leditors run into problems above ~20 screens so this *should* be enough?
         }
         public override void Update()
         {
             lastLaserActive = laserActive;
             laserActive = Custom.LerpAndTick(laserActive, (GetOverseerLaserCounter(overseerGraphics.owner as Overseer) <= 0) ? 0f : 1f, laserActiveLerpSpeed, laserActiveLerpSpeed);
             lastLaserColor = laserColor;
-            if (optionsInstance.ColorChangingLaser.Value && GetOverseerLaserCounter(overseerGraphics.owner as Overseer) >= 0) { laserColor = new Color((laserAimingDuration - (float)GetOverseerLaserCounter(overseerGraphics.owner as Overseer)) / laserAimingDuration, (float)GetOverseerLaserCounter(overseerGraphics.owner as Overseer) / laserAimingDuration, 0.1f); }
+            if (optionsInstance.ColorChangingLaser.Value && GetOverseerLaserCounter(overseerGraphics.owner as Overseer) >= 0 &&
+                ((overseerGraphics.owner as Overseer).mode == Overseer.Mode.Watching || (overseerGraphics.owner as Overseer).mode == Overseer.Mode.Conversing || (overseerGraphics.owner as Overseer).mode == Overseer.Mode.Projecting))
+                { laserColor = new Color((laserAimingDuration - (float)GetOverseerLaserCounter(overseerGraphics.owner as Overseer)) / laserAimingDuration, (float)GetOverseerLaserCounter(overseerGraphics.owner as Overseer) / laserAimingDuration, 0.1f); }
             lastFlash = flash;
             lastLastLookAt = lastLookAt; //Order of operations nonsense, don't worry about it
             lastLookAt = (overseerGraphics.owner as Overseer).AI.lookAt;
