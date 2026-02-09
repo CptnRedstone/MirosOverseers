@@ -1,5 +1,6 @@
 using BepInEx.Logging;
 using IL.Menu;
+using IL.Menu.Remix;
 using IL.MoreSlugcats;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
@@ -175,7 +176,7 @@ public class MirosOverseersOptions : OptionInterface
     }
     public void UpdateAllowEarlyOverseers()
     {
-        if (GuaranteeWildOverseersCheckbox.GetValueBool()) { AllowEarlyOverseersCheckbox.value = "true"; }
+        //if (GuaranteeWildOverseersCheckbox.GetValueBool()) { AllowEarlyOverseersCheckbox.value = "true"; }
         AllowEarlyOverseersCheckbox.greyedOut = GuaranteeWildOverseersCheckbox.GetValueBool();
     }
     public void UpdateDisableDuringCutscenes()
@@ -296,6 +297,7 @@ public class MirosOverseersOptions : OptionInterface
                 new OpLabel(0f, 0f, "Disable lasers during dialogue?") { description = "Disables lasers when any dialogue box is onscreen." },
             ],
         ];
+        opTab.focusables.Clear();
         opTab.AddItems(BuildUIElements(UnbuiltPlayerOptions));
 
         RelaxedButton.OnPressDone += SetRelaxed;
@@ -308,45 +310,52 @@ public class MirosOverseersOptions : OptionInterface
         UpdateAllowEarlyOverseers();
         UpdateDisableDuringCutscenes();
     }
-    public UIelement[] BuildUIElements(List<List<UIelement>> inputArray)
+    public UIelement[] BuildUIElements(List<List<UIelement>> inputList)
     {
+        static int RealModulo(int dividend, int divisor)
+        {
+            int remainder = dividend % divisor;               //C#'s % is not a modulo operator, it's a *remainder* operator, which will return negative values if the dividend is negative. That's stupid.
+            return remainder + (remainder < 0 ? divisor : 0); //C# also doesn't have a Math.Mod() function to fill the hole created by % not being a true modulo. That's even stupider.
+        }
+
         int firstRealElement = 1; //Don't count the scrollbox as part of the scrollbox contents.
         float verticalBuffer = 5f;
         float horizontalBuffer = 5f;
         float lineBreak = 10f;
         float opTextBoxWidth = 50f;
-        Vector2 scrollBoxEdgePadding = new(34f, 29f); //These exact numbers line up the title with the mod name text on the description screen.
         Vector2 opHoldButtonSize = new(75f, 25f);
-
-        inputArray = [.. inputArray.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; //"mod.name" pulls from the modinfo.json.
 
         float currentHeight = 0f;        //Normally we should start at our target height, but thanks to OpScrollBox we don't *know* what our target height is until AFTER generation.
         List<UIelement> outputList = []; //So, start at 0, work into the negatives, then just shove everything up when we're done. This is horrible but I don't see a better option.
-        OpScrollBox scrollBox = new(new Vector2(-14f, -14f), new Vector2(628f, 628f), 0f) { fillAlpha = 0f, description = " "}; //Magic numbers, yeah yeah. Ask OpScrollBox where IT got them.
-        scrollBox.bumpBehav.Focused = false; //Prevents the scrollbox wrapper from enlarging every time you hover over it.
+        Vector2 scrollBoxEdgePadding = new(34f, 29f); //These magic numbers line up the title with the mod name text on the description screen.
+        OpScrollBox scrollBox = new(new Vector2(-14f, -14f), new Vector2(628f, 628f), 0f, hasBack: false) { description = " "}; //More magic numbers, yeah yeah. Ask OpScrollBox where IT got them. This lines the borders up.
         outputList.Add(scrollBox);
 
-        for (int i=0; i<inputArray.Count; i++)
+        inputList = [.. inputList.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; //"mod.name" pulls from the modinfo.json.
+
+
+        //Place all of our elements.
+        for (int i=0; i<inputList.Count; i++)
         {
             //Figure out how tall the current row is, and how far below the previous row it needs to be.
             float currentRowHeight = 0f;
-            if (inputArray[i].Count > 0)
+            if (inputList[i].Count > 0)
             {
-                for (int j = 0; j < inputArray[i].Count; j++)
+                for (int j = 0; j < inputList[i].Count; j++)
                 {
-                    currentRowHeight = Mathf.Max(currentRowHeight, inputArray[i][j].size.y);
+                    currentRowHeight = Mathf.Max(currentRowHeight, inputList[i][j].size.y);
                 }
                 if (i > 0)
                 {
                     currentHeight -= currentRowHeight + verticalBuffer;
-                    if (inputArray[i].First() is OpLabel) { currentHeight -= lineBreak; }
+                    if (inputList[i].First() is OpLabel) { currentHeight -= lineBreak; }
                 }
             }
             //Position each element in the row, patching UIelement settings as we go.
             float currentDepth = scrollBoxEdgePadding.x;
-            for (int j = 0; j < inputArray[i].Count; j++)
+            for (int j = 0; j < inputList[i].Count; j++)
             {
-                UIelement currentElement = inputArray[i][j];
+                UIelement currentElement = inputList[i][j];
                 currentElement.pos = new Vector2(currentDepth, currentHeight - ((currentElement.size.y - currentRowHeight) / 2f));
                 if (currentElement is OpTextBox)
                 {
@@ -367,6 +376,26 @@ public class MirosOverseersOptions : OptionInterface
             }
         }
 
+
+        //Rebind EVERYTHING from scratch because _FocusCandidateCalculate can't even get STRAIGHT LINES correct.
+        List<List<UIfocusable>> keybinderList = [];
+        for (int i = 0; i < inputList.Count; i++)
+        {
+            keybinderList.Add(inputList[i].Where(element => element is UIfocusable).ToList().ConvertAll(element => element as UIfocusable));
+        }
+        keybinderList = [.. keybinderList.Where(element => element.Count > 0)];
+        for (int i = 0; i < keybinderList.Count; i++)
+        {
+            for (int j = 0; j < keybinderList[i].Count; j++)
+            {
+                keybinderList[i][j].SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList[i][RealModulo(j - 1, keybinderList[i].Count)]);
+                keybinderList[i][j].SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList[i][RealModulo(j + 1, keybinderList[i].Count)]);
+                keybinderList[i][j].SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList[RealModulo(i - 1, keybinderList.Count)][Math.Min(j, keybinderList[RealModulo(i - 1, keybinderList.Count)].Count - 1)]);
+                keybinderList[i][j].SetNextFocusable(UIfocusable.NextDirection.Down, keybinderList[RealModulo(i + 1, keybinderList.Count)][Math.Min(j, keybinderList[RealModulo(i + 1, keybinderList.Count)].Count - 1)]);
+            }
+        }
+
+
         //This is my emotional support scug. Please do not wake him. His functionality was a slog, but I love him anyway.
         FSprite scugSprite = new("slugcatSleeping") { width = 37f, height = 20f, x = 18.5f, y = 10f};
         OpContainer scugContainer = new(new((scrollBox.size.x - scrollBoxEdgePadding.x) - scugSprite.width, currentHeight))
@@ -377,10 +406,16 @@ public class MirosOverseersOptions : OptionInterface
         //OpSimpleButtons' minimum height is 4 pixels too tall and I don't see a way to shrink it. I'm completely out of patience to find a fix (if there even is one), so, hardcoded 2-pixel buffer is a feature now I guess.
         OpSimpleButton scugInteractor = new(new(scrollBox.size.x - scrollBoxEdgePadding.x - scugSprite.width - 2f, currentHeight - 2f), new(scugSprite.width + 4f, scugSprite.height + 4f))
         { mute = true, colorEdge = new(0,0,0,0), colorFill = new(0,0,0,0), description = "He sleeps, for he knows not of the horrors of building a remix menu." };
-        scugInteractor.bumpBehav.Focused = false; //Because "zero alpha" actually only means "zero alpha unless and until hovered over".
+        scugInteractor.bumpBehav.Focused = false; //Because "zero alpha" actually only means "zero alpha unless and until hovered over". Why is doesBackBump not standard?
         scugInteractor.OnPressInit += (UIfocusable) => { scugContainer.PlaySound(SoundID.MENU_Dream_Switch); };
         scugInteractor._AddToScrollBox(scrollBox);
         outputList.Add(scugInteractor);
+        keybinderList.Last().Last().SetNextFocusable(UIfocusable.NextDirection.Right, scugInteractor);
+        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList[RealModulo(keybinderList.Count - 2, keybinderList.Count)].Last());
+        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Down, keybinderList.First().Last());
+        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList.Last().Last());
+        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList.Last().First());
+
 
         //Dear OpScrollBox... How am I supposed to define the final height of your contents BEFORE I GENERATE YOU AND YOUR CONTENTS?!
         (outputList[0] as OpScrollBox).contentSize = Math.Abs(currentHeight) + (scrollBoxEdgePadding.y * 2) + outputList[firstRealElement].size.y;
@@ -391,6 +426,8 @@ public class MirosOverseersOptions : OptionInterface
             outputList[i].PosY += Math.Abs(currentHeight) + scrollBoxEdgePadding.y;
             outputList[i].Change();
         }
+
+
         return [.. outputList];
     }
     public override void Update()
