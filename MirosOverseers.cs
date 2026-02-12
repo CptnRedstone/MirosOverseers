@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Security;
 using System.Security.Permissions;
 using UnityEngine;
-using Menu.Remix.MixedUI.ValueTypes;
 using System.Linq;
 using System.Collections.Generic;
 
@@ -24,6 +23,8 @@ public partial class MirosOverseers : BaseUnityPlugin
 {
     public static MirosOverseers modInstance;
     public static MirosOverseersOptions optionsInstance;
+    public static MeadowCompat meadowCompatInstance;
+    public static bool IsMeadowEnabled;
     public MirosOverseers()
     {
         try
@@ -35,28 +36,59 @@ public partial class MirosOverseers : BaseUnityPlugin
             Logger.LogError(ex);
         }
     }
-    public void LogInfo(object data)
-    {
-        Logger.LogInfo(data);
-    }
+    public void LogDebug(object data) { Logger.LogDebug(data); }
+    public void LogInfo(object data) { Logger.LogInfo(data); }
+    public void LogWarn(object data) { Logger.LogWarning(data); }
+    public void LogError(object data) { Logger.LogError(data); }
+    public void LogFatal(object data) { Logger.LogFatal(data); }
     private void OnEnable()
     {
         modInstance = this;
         On.RainWorld.OnModsInit += RainWorldOnOnModsInit;
+        On.RainWorld.PostModsInit += RainWorldPostModsInit;
     }
 
     //-------------------------Future ideas-------------------------
     //Inspectors worth?
+    //Dead eyes still fire?
     //Make iggy dreams play laser sfx?
     //Hologram shader that doesn't fade out?
 
     //-------------------------TODO-------------------------
+    //Does eating moon force despawn iggy?
+    //How does scrollbar behave without needing to scroll?
+    //Does hellish need a nerf?
+
     //Thumbnail
 
     //STUPID SCROLLBOX WRAPPER GO AWAY
 
-    //Meadow compat and remix setting sync
+    //Meadow remix setting sync
+    //Meadow laser state sync
     //Review sound loop discard issue (definite for meadow, spectator bug?)
+
+    /*-------------------------Trailer!-------------------------
+
+    Pebbles ejecting spearmaster
+    Pebbles talking to gourmand about keeping things out
+    Pebbles talking to survivor about frolicking
+    Pebbles asking monk to tell everyone to leave
+    Scene of 500 scugs entering the puppet chamber simultaneously
+    Pebblesmad.mp4
+    Survivor climbing wall, overseer appears, survivor gets blasted
+    Title drop (Music, probably Slaughter?)
+    "Every overseer now uncontrollably shoots miros lasers!" (various clips, maybe shooting at other creatures?, maybe shooting while guiding)
+    "What could possibly go wrong?" (various clips, maybe survivor intro?, maybe pipe snipes?)
+    "Highly configurable!"
+    Showcase obscene spawn counts
+    Showcase 0 firing timer on vulnerable arti
+    Showcase disable during dialogue and visual effects; probably talking to moon would be funny
+    "Lore implications...?" (scav fighting overseer)
+    "Rain Meadow synced!" (meadow clips)
+    "Download now!" (jumping scug at scav toll)
+    "You'll have a *blast*!" (music cuts, scug gets stabbed by a toll scav, then tons of overseers appear and nuke everything)
+
+    */
 
     private bool IsInit;
     private void RainWorldOnOnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
@@ -69,32 +101,50 @@ public partial class MirosOverseers : BaseUnityPlugin
             IsInit = true;
             MachineConnector.SetRegisteredOI("CaptainRedstone.MirosOverseers", optionsInstance);
         }
-        catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        catch (Exception ex) { modInstance.LogError(ex); }
 
-        try { IL.Explosion.Update += IL_Explosion_Update; } catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        try { IL.Explosion.Update += IL_Explosion_Update; } catch (Exception ex) { modInstance.LogError(ex); }
         On.Overseer.ctor += On_Overseer_Ctor;
         On.Overseer.Die += On_Overseer_Die;
         On.Overseer.Update += On_Overseer_Update;
         On.Overseer.Violence += On_Overseer_Violence;
         On.OverseerGraphics.ctor += On_OverseerGraphics_Ctor;
         On.Region.ctor_string_int_int_RainWorldGame_Timeline += HolyFunctionNameBatman;
-        try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { modInstance.LogError(ex); }
 
         On.WorldLoader.GeneratePopulation += OnOverseerSpawnDebug;
-        try { IL.WorldLoader.GeneratePopulation += ILOverseerSpawnDebug; } catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        try { IL.WorldLoader.GeneratePopulation += ILOverseerSpawnDebug; } catch (Exception ex) { modInstance.LogError(ex); }
+    }
+    private void RainWorldPostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
+    {
+        orig(self);
+        IsMeadowEnabled = ModManager.ActiveMods.Any(x => x.id == "henpemaz_rainmeadow");
+        if (IsMeadowEnabled)
+        {
+            LogDebug("Rain Meadow is enabled, setting up integration...");
+            try
+            {
+                meadowCompatInstance = new MeadowCompat(this);
+            }
+            catch (Exception ex) { modInstance.LogError(ex); }
+        }
+        else
+        {
+            LogDebug("Rain Meadow isn't enabled, skipping integration...");
+        }
     }
     private void OnOverseerSpawnDebug(On.WorldLoader.orig_GeneratePopulation orig, WorldLoader self, bool fresh)
     {
         orig(self, fresh);
 
-        modInstance.LogInfo("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
-        modInstance.LogInfo("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
-        modInstance.LogInfo("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
-        modInstance.LogInfo("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
-        modInstance.LogInfo("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
-        modInstance.LogInfo("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
-        modInstance.LogInfo("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
-        modInstance.LogInfo("Iggy Hates Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.angryWithPlayer);
+        modInstance.LogDebug("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
+        modInstance.LogDebug("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
+        modInstance.LogDebug("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
+        modInstance.LogDebug("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
+        modInstance.LogDebug("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
+        modInstance.LogDebug("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
+        modInstance.LogDebug("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
+        modInstance.LogDebug("Iggy Hates Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.angryWithPlayer);
     }
     private void ILOverseerSpawnDebug(ILContext il)
     {
@@ -109,7 +159,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.Emit(OpCodes.Ldloc_S, (byte)loc);
             cursor.EmitDelegate(delegate(int x) { modInstance.LogInfo("Wild Overseers spawned this cycle; count is " + x); });
         }
-        catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        catch (Exception ex) { modInstance.LogError(ex); }
     }
     private void IL_Worldloader_Generate_Population(ILContext il)
     {
@@ -122,7 +172,7 @@ public partial class MirosOverseers : BaseUnityPlugin
         //    cursor.Emit(OpCodes.Pop);
         //    cursor.EmitDelegate(delegate() { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
         //}
-        //catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        //catch (Exception ex) { modInstance.LogError(ex); }
 
         try
         {
@@ -141,7 +191,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.EmitDelegate(delegate() { return optionsInstance.GuaranteeWildOverseers.Value; });
             cursor.Emit(OpCodes.Brtrue, jump_to);
         }
-        catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        catch (Exception ex) { modInstance.LogError(ex); }
     }
     private void HolyFunctionNameBatman(On.Region.orig_ctor_string_int_int_RainWorldGame_Timeline orig, Region self, string name, int firstRoomIndex, int regionNumber, RainWorldGame game, SlugcatStats.Timeline timelineIndex)
     {
@@ -229,7 +279,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.Emit(OpCodes.Stloc, damage_float);
             cursor.MarkLabel(violence_label);
         }
-        catch (Exception ex) { modInstance.Logger.LogError(ex); }
+        catch (Exception ex) { modInstance.LogError(ex); }
     }
 
 

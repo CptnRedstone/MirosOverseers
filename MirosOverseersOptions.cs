@@ -1,7 +1,3 @@
-using BepInEx.Logging;
-using IL.Menu;
-using IL.Menu.Remix;
-using IL.MoreSlugcats;
 using Menu.Remix.MixedUI;
 using Menu.Remix.MixedUI.ValueTypes;
 using System;
@@ -123,7 +119,7 @@ public class MirosOverseersOptions : OptionInterface
     {
         GuaranteeIggyCheckbox.value = "true";
         GuaranteeWildOverseersCheckbox.value = "true";
-        AllowEarlyOverseersCheckbox.value = "true";
+        //Don't need to add cycle 0 spawns when it's already forced
         AdjustOverseerSpawnsCheckbox.value = "true";
         OverseersMinPlusTextbox.value = "5";
         OverseersMinTimesTextbox.value = "2";
@@ -147,7 +143,7 @@ public class MirosOverseersOptions : OptionInterface
     {
         GuaranteeIggyCheckbox.value = "true";
         GuaranteeWildOverseersCheckbox.value = "true";
-        AllowEarlyOverseersCheckbox.value = "true";
+        //Don't need to add cycle 0 spawns when it's already forced
         AdjustOverseerSpawnsCheckbox.value = "true";
         OverseersMinPlusTextbox.value = "10";
         OverseersMinTimesTextbox.value = "3";
@@ -194,7 +190,7 @@ public class MirosOverseersOptions : OptionInterface
             [
                 RelaxedButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Relaxed") { description = "Leaves overseer spawnrates default, and enables some safeties; designed for newer players, or for use with other mods." },
                 ChallengingButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Challenging") { description = "The intended (and default) experience; increases overseer spawnrates to give experienced players an interesting but mostly™ fair challenge." },
-                HellishButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Hellish") { description = "Pain. Overseers are drastically more dangerous, can't kill each other, and there are far more of them. Designed for seasoned movement nerds looking for a serious challenge." },
+                HellishButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Hellish") { description = "This *will* be painful. Overseers aim dramatically faster, can't kill each other, and there are far more of them. Designed for seasoned movement nerds looking for a serious challenge." },
             ],
 
             [new OpLabel(0f, 0f, "Overseer spawning behavior:")],
@@ -310,7 +306,7 @@ public class MirosOverseersOptions : OptionInterface
         UpdateAllowEarlyOverseers();
         UpdateDisableDuringCutscenes();
     }
-    public UIelement[] BuildUIElements(List<List<UIelement>> inputList)
+    public UIelement[] BuildUIElements(List<List<UIelement>> inputList, bool includeTitle = true)
     {
         static int RealModulo(int dividend, int divisor)
         {
@@ -331,7 +327,7 @@ public class MirosOverseersOptions : OptionInterface
         OpScrollBox scrollBox = new(new Vector2(-14f, -14f), new Vector2(628f, 628f), 0f, hasBack: false) { description = " "}; //More magic numbers, yeah yeah. Ask OpScrollBox where IT got them. This lines the borders up.
         outputList.Add(scrollBox);
 
-        inputList = [.. inputList.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; //"mod.name" pulls from the modinfo.json.
+        if (includeTitle) { inputList = [.. inputList.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; } //"mod.name" pulls from the modinfo.json.
 
 
         //Place all of our elements.
@@ -394,6 +390,9 @@ public class MirosOverseersOptions : OptionInterface
                 keybinderList[i][j].SetNextFocusable(UIfocusable.NextDirection.Down, keybinderList[RealModulo(i + 1, keybinderList.Count)][Math.Min(j, keybinderList[RealModulo(i + 1, keybinderList.Count)].Count - 1)]);
             }
         }
+        scrollBox.SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList.First().First());  //I give up. I give up! I cannot find a single way to cleanly circumvent this idiotic "wrapper bodyblocks everything" issue,
+        scrollBox.SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList.First().First()); //at least without writing my own version of a scrollbox and quintupling the scope of this function. In all honesty,
+        scrollBox.SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList.First().First());    //this isn't really a bad workaround, but I got SO CLOSE to perfect behavior, and so many approaches were so close to a fix.
 
 
         //This is my emotional support scug. Please do not wake him. His functionality was a slog, but I love him anyway.
