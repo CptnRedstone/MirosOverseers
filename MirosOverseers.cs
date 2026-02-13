@@ -58,6 +58,7 @@ public partial class MirosOverseers : BaseUnityPlugin
     //Does eating moon force despawn iggy?
     //How does scrollbar behave without needing to scroll?
     //Does hellish need a nerf?
+    //Overseer kill count?
 
     //Thumbnail
 
@@ -286,22 +287,18 @@ public partial class MirosOverseers : BaseUnityPlugin
 
 
     public static ConditionalWeakTable<Overseer, OverseerWrapper> OverseerCwt = new();
-    public static ConditionalWeakTable<OverseerGraphics, OverseerGraphicsWrapper> OverseerGraphicsCwt = new();
     public class OverseerWrapper
     {
         public int laserCounter;
         public LightSource laserLight;
-    }
-    public class OverseerGraphicsWrapper
-    {
         public OverseerMirosLaser laserBeam;
     }
     public static void SetOverseerLaserCounter(Overseer overseer, int laserCounter) { OverseerCwt.GetOrCreateValue(overseer).laserCounter = laserCounter; }
     public static void SetOverseerLaserLight(Overseer overseer, LightSource lightSource) { OverseerCwt.GetOrCreateValue(overseer).laserLight = lightSource; }
     public static int GetOverseerLaserCounter(Overseer overseer) { OverseerCwt.TryGetValue(overseer, out var results); return results.laserCounter; }
     public static LightSource GetOverseerLaserLight(Overseer overseer) { OverseerCwt.TryGetValue(overseer, out var results); return results.laserLight; }
-    public static void SetOverseerLaserBeam(OverseerGraphics overseer, OverseerMirosLaser laserBeam) { OverseerGraphicsCwt.GetOrCreateValue(overseer).laserBeam = laserBeam; }
-    public static OverseerMirosLaser GetOverseerLaserBeam(OverseerGraphics overseer) { OverseerGraphicsCwt.TryGetValue(overseer, out var results); return results.laserBeam; }
+    public static void SetOverseerLaserBeam(OverseerGraphics overseerGraphics, OverseerMirosLaser laserBeam) { OverseerCwt.GetOrCreateValue(overseerGraphics.owner as Overseer).laserBeam = laserBeam; }
+    public static OverseerMirosLaser GetOverseerLaserBeam(OverseerGraphics overseerGraphics) { OverseerCwt.TryGetValue(overseerGraphics.owner as Overseer, out var results); return results.laserBeam; }
 
     private void On_Overseer_Ctor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
     {

@@ -1,12 +1,20 @@
 ﻿using JetBrains.Annotations;
 using RainMeadow;
 using System;
-using System.Runtime.CompilerServices;
 
 namespace MirosOverseers;
 
 public class MeadowCompat
 {
+    //----------Bonus todo yay my favorite----------
+    //Sync remix settings
+    //Sync the laser timer
+    //Sync explosions?
+    //Sync look direction??
+    //Get assumes key exists
+    //Protect get more
+    //Static class thingy
+
     public readonly MirosOverseers modInstance;
     public MeadowCompat(MirosOverseers modInstance)
     {
@@ -16,19 +24,15 @@ public class MeadowCompat
     public void OnOverseerCtor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
     {
         orig(self, abstractCreature, world);
-        //abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
+        abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
     }
 
 
-    public static ConditionalWeakTable<OnlineCreature, OnlineOverseerWrapper> OnlineOverseerCwt = new();
-    public static ConditionalWeakTable<OnlineCreature, OnlineOverseerGraphicsWrapper> OnlineOverseerGraphicsCwt = new();
+    //public static ConditionalWeakTable<OnlineCreature, OnlineOverseerWrapper> OnlineOverseerCwt = new();
     public class OnlineOverseerWrapper
     {
         public int laserCounter;
         public LightSource laserLight;
-    }
-    public class OnlineOverseerGraphicsWrapper
-    {
         public MirosOverseers.OverseerMirosLaser laserBeam;
     }
 
@@ -50,13 +54,19 @@ public class MeadowCompat
             public State() { }
             public State(OnlineEntity onlineEntity)
             {
-                LaserTimer = MirosOverseers.GetOverseerLaserCounter((onlineEntity as OnlineCreature).realizedCreature as Overseer);
+                if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature)
+                {
+                    if (MirosOverseers.OverseerCwt.TryGetValue(abstractCreature.realizedCreature as Overseer, out _))
+                    {
+                        LaserTimer = MirosOverseers.GetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer);
+                    }
+                }   
             }
             public override void ReadTo(OnlineEntity.EntityData data, OnlineEntity onlineEntity)
             {
                 if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature)
                 {
-                    MirosOverseers.SetOverseerLaserCounter((onlineEntity as OnlineCreature).realizedCreature as Overseer, LaserTimer);
+                    MirosOverseers.SetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer, LaserTimer);
                 }
             }
             public override Type GetDataType()
