@@ -42,7 +42,7 @@ public static class MeadowCompat
 
     public static RealizedPhysicalObjectState GetRealizedState_Hook(
         orig_GetRealizedState orig,
-        AbstractPhysicalObjectState self, // Add this!
+        AbstractPhysicalObjectState self,
         OnlinePhysicalObject onlineEntity
     )
     {
