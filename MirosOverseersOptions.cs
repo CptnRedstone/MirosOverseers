@@ -190,7 +190,7 @@ public class MirosOverseersOptions : OptionInterface
             [
                 RelaxedButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Relaxed") { description = "Leaves overseer spawnrates default, and enables some safeties; designed for newer players, or for use with other mods." },
                 ChallengingButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Challenging") { description = "The intended (and default) experience; increases overseer spawnrates to give experienced players an interesting but mostly™ fair challenge." },
-                HellishButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Hellish") { description = "This *will* be painful. Overseers aim dramatically faster, can't kill each other, and there are far more of them. Designed for seasoned movement nerds looking for a serious challenge." },
+                HellishButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Hellish") { description = "This *will* be painful. Overseers aim dramatically faster, can't kill each other, and there are far more of them. Designed to be right on the edge of possible." },
             ],
 
             [new OpLabel(0f, 0f, "Overseer spawning behavior:")],
@@ -324,7 +324,7 @@ public class MirosOverseersOptions : OptionInterface
         float currentHeight = 0f;        //Normally we should start at our target height, but thanks to OpScrollBox we don't *know* what our target height is until AFTER generation.
         List<UIelement> outputList = []; //So, start at 0, work into the negatives, then just shove everything up when we're done. This is horrible but I don't see a better option.
         Vector2 scrollBoxEdgePadding = new(34f, 29f); //These magic numbers line up the title with the mod name text on the description screen.
-        OpScrollBox scrollBox = new(new Vector2(-14f, -14f), new Vector2(628f, 628f), 0f, hasBack: false) { description = " "}; //More magic numbers, yeah yeah. Ask OpScrollBox where IT got them. This lines the borders up.
+        OpScrollBox scrollBox = new(new Vector2(-14f, -14f), new Vector2(628f, 628f), 0f, hasBack: false) { description = " " }; //More magic numbers, yeah yeah. Ask OpScrollBox where IT got them. This lines the borders up.
         outputList.Add(scrollBox);
 
         if (includeTitle) { inputList = [.. inputList.Prepend([new OpLabel(0f, 0f, mod.name + " Options", true)])]; } //"mod.name" pulls from the modinfo.json.
@@ -390,9 +390,12 @@ public class MirosOverseersOptions : OptionInterface
                 keybinderList[i][j].SetNextFocusable(UIfocusable.NextDirection.Down, keybinderList[RealModulo(i + 1, keybinderList.Count)][Math.Min(j, keybinderList[RealModulo(i + 1, keybinderList.Count)].Count - 1)]);
             }
         }
-        scrollBox.SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList.First().First());  //I give up. I give up! I cannot find a single way to cleanly circumvent this idiotic "wrapper bodyblocks everything" issue,
-        scrollBox.SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList.First().First()); //at least without writing my own version of a scrollbox and quintupling the scope of this function. In all honesty,
-        scrollBox.SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList.First().First());    //this isn't really a bad workaround, but I got SO CLOSE to perfect behavior, and so many approaches were so close to a fix.
+        if (keybinderList.Count > 0)
+        {
+            scrollBox.SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList.First().First());  //I give up. I give up! I cannot find a single way to cleanly circumvent this idiotic "wrapper bodyblocks everything" issue,
+            scrollBox.SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList.First().First()); //at least without writing my own version of a scrollbox and quintupling the scope of this function. In all honesty,
+            scrollBox.SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList.First().First());    //this isn't really a bad workaround, but I got SO CLOSE to perfect behavior, and so many approaches were SO CLOSE to a fix.
+        }
 
 
         //This is my emotional support scug. Please do not wake him. His functionality was a slog, but I love him anyway.
@@ -409,11 +412,14 @@ public class MirosOverseersOptions : OptionInterface
         scugInteractor.OnPressInit += (UIfocusable) => { scugContainer.PlaySound(SoundID.MENU_Dream_Switch); };
         scugInteractor._AddToScrollBox(scrollBox);
         outputList.Add(scugInteractor);
-        keybinderList.Last().Last().SetNextFocusable(UIfocusable.NextDirection.Right, scugInteractor);
-        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList[RealModulo(keybinderList.Count - 2, keybinderList.Count)].Last());
-        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Down, keybinderList.First().Last());
-        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList.Last().Last());
-        scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList.Last().First());
+        if (keybinderList.Count > 0)
+        {
+            keybinderList.Last().Last().SetNextFocusable(UIfocusable.NextDirection.Right, scugInteractor);
+            scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Up, keybinderList[RealModulo(keybinderList.Count - 2, keybinderList.Count)].Last());
+            scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Down, keybinderList.First().Last());
+            scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Left, keybinderList.Last().Last());
+            scugInteractor.SetNextFocusable(UIfocusable.NextDirection.Right, keybinderList.Last().First());
+        }
 
 
         //Dear OpScrollBox... How am I supposed to define the final height of your contents BEFORE I GENERATE YOU AND YOUR CONTENTS?!

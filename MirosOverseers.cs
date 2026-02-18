@@ -23,7 +23,6 @@ public partial class MirosOverseers : BaseUnityPlugin
 {
     public static MirosOverseers modInstance;
     public static MirosOverseersOptions optionsInstance;
-    public static MeadowCompat meadowCompatInstance;
     public static bool IsMeadowEnabled;
     public MirosOverseers()
     {
@@ -58,11 +57,10 @@ public partial class MirosOverseers : BaseUnityPlugin
     //Does eating moon force despawn iggy?
     //How does scrollbar behave without needing to scroll?
     //Does hellish need a nerf?
-    //Overseer kill count?
+    //Overseer kill count? Check DoesCreatureEarnATrophy
+    //Overseers shouldn't flee at the end of cycles?
 
     //Thumbnail
-
-    //STUPID SCROLLBOX WRAPPER GO AWAY
 
     //Meadow remix setting sync
     //Meadow laser state sync
@@ -125,7 +123,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             LogDebug("Rain Meadow is enabled, setting up integration...");
             try
             {
-                meadowCompatInstance = new MeadowCompat(this);
+                MeadowCompat.ApplyHooks();
             }
             catch (Exception ex) { modInstance.LogError(ex); }
         }
@@ -164,16 +162,16 @@ public partial class MirosOverseers : BaseUnityPlugin
     }
     private void IL_Worldloader_Generate_Population(ILContext il)
     {
-        //try
-        //{
-        //    ILCursor cursor = new(il);
-        //    cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21));
-        //    cursor.MoveAfterLabels();
-        //    cursor.Index++;
-        //    cursor.Emit(OpCodes.Pop);
-        //    cursor.EmitDelegate(delegate() { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
-        //}
-        //catch (Exception ex) { modInstance.LogError(ex); }
+        try
+        {
+            ILCursor cursor = new(il);
+            cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21));
+            cursor.MoveAfterLabels();
+            cursor.Index++;
+            cursor.Emit(OpCodes.Pop);
+            cursor.EmitDelegate(delegate () { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
+        }
+        catch (Exception ex) { modInstance.LogError(ex); }
 
         try
         {
@@ -436,6 +434,10 @@ public partial class MirosOverseers : BaseUnityPlugin
                     GetOverseerLaserLight(self).color = new Color((laserAimingDuration - (float)GetOverseerLaserCounter(self)) / laserAimingDuration, (float)GetOverseerLaserCounter(self) / laserAimingDuration, 0.1f);
                     GetOverseerLaserLight(self).HardSetAlpha(1f);
                 }
+                else
+                {
+                    GetOverseerLaserLight(self).HardSetAlpha(0f); //Turns out miros vulture laser lights just, stop moving when aiming at air! Love when my bug is actually vanilla's bug.
+                }
             }
         }
         else
@@ -508,6 +510,11 @@ public partial class MirosOverseers : BaseUnityPlugin
         }
         public override void DrawSprites(RoomCamera.SpriteLeaser sLeaser, RoomCamera rCam, float timeStacker, Vector2 camPos)
         {
+            //OverseerGraphics' AddToContainer forces this sprite into the foreground layer on ctor, which for whatever reason makes it render *under* Metropolis's background.
+            //Technically it should be midground, but that casts a shadow (another vanilla laser bug), so HUD it is. I'm a bit worried this every-tick check is expensive,
+            //but it's either that or a really annoying/nasty AddToContainer hook that I don't want to bother with right now, and would maybe not be great for mod compat.
+            if (sLeaser.sprites[firstSprite].container == rCam.ReturnFContainer("Foreground")) { rCam.ReturnFContainer("HUD").AddChild(sLeaser.sprites[firstSprite]); }
+
             Vector2 vector = Vector2.Lerp((overseerGraphics.owner as Overseer).mainBodyChunk.lastPos, (overseerGraphics.owner as Overseer).mainBodyChunk.pos, timeStacker);
             Vector2 vector2 = Custom.DirVec(Vector2.Lerp(lastLastLookAt, lastLookAt, timeStacker), vector);
             float lerpedLaserActive = Mathf.Lerp(lastLaserActive, laserActive, timeStacker);

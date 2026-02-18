@@ -4,28 +4,35 @@ using System;
 
 namespace MirosOverseers;
 
-public class MeadowCompat
+public static class MeadowCompat
 {
     //----------Bonus todo yay my favorite----------
     //Sync remix settings
     //Sync the laser timer
     //Sync explosions?
     //Sync look direction??
-    //Get assumes key exists
-    //Protect get more
     //Static class thingy
+    //Breaks in singleplayer with meadow
+    //Laser light stops updating if pointed into the sky
 
-    public readonly MirosOverseers modInstance;
-    public MeadowCompat(MirosOverseers modInstance)
+    public static readonly MirosOverseers modInstance;
+    public static void ApplyHooks()
     {
-        this.modInstance = modInstance;
-        On.Overseer.ctor += OnOverseerCtor;
+        On.Overseer.ctor += delegate(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
+        {
+            orig(self, abstractCreature, world);
+
+            if (OnlineManager.lobby != null)
+            {
+                abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
+            }
+        };
     }
-    public void OnOverseerCtor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
-    {
-        orig(self, abstractCreature, world);
-        abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
-    }
+    //public static void OnOverseerCtor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
+    //{
+    //    orig(self, abstractCreature, world);
+    //    abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
+    //}
 
 
     //public static ConditionalWeakTable<OnlineCreature, OnlineOverseerWrapper> OnlineOverseerCwt = new();
@@ -54,20 +61,21 @@ public class MeadowCompat
             public State() { }
             public State(OnlineEntity onlineEntity)
             {
-                if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature)
-                {
-                    if (MirosOverseers.OverseerCwt.TryGetValue(abstractCreature.realizedCreature as Overseer, out _))
-                    {
-                        LaserTimer = MirosOverseers.GetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer);
-                    }
-                }   
+
+                //if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature && abstractCreature != null && abstractCreature.realizedCreature != null)
+                //{
+                //    if (MirosOverseers.OverseerCwt.TryGetValue(abstractCreature.realizedCreature as Overseer, out _))
+                //    {
+                //        LaserTimer = MirosOverseers.GetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer);
+                //    }
+                //}   
             }
             public override void ReadTo(OnlineEntity.EntityData data, OnlineEntity onlineEntity)
             {
-                if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature)
-                {
-                    MirosOverseers.SetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer, LaserTimer);
-                }
+                //if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature && abstractCreature != null && abstractCreature.realizedCreature != null)
+                //{
+                //    MirosOverseers.SetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer, LaserTimer);
+                //}
             }
             public override Type GetDataType()
             {
