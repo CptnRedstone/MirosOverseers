@@ -14,6 +14,7 @@ public static class MeadowCompat
     //Sync explosions?
     //Lights are getting left behind...
     //Sound loop discard issue
+    //Is onlineCreature ever not OnlineCreature?
     public delegate RealizedCreatureState orig_GetRealizedState(
         AbstractCreatureState self,
         OnlineCreature onlineEntity
@@ -21,7 +22,7 @@ public static class MeadowCompat
 
     public static readonly MirosOverseers modInstance;
 
-    public static void ApplyHooks()
+    public static void ApplyHooks() //Thanks for the help UO!
     {
         new Hook(
             typeof(AbstractCreatureState).GetMethod(

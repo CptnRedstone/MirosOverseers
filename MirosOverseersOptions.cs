@@ -293,7 +293,6 @@ public class MirosOverseersOptions : OptionInterface
                 new OpLabel(0f, 0f, "Disable lasers during dialogue?") { description = "Disables lasers when any dialogue box is onscreen." },
             ],
         ];
-        opTab.focusables.Clear();
         opTab.AddItems(BuildUIElements(UnbuiltPlayerOptions));
 
         RelaxedButton.OnPressDone += SetRelaxed;
@@ -428,7 +427,9 @@ public class MirosOverseersOptions : OptionInterface
         (outputList[0] as OpScrollBox).ScrollToTop(); //WHY ISN'T THIS DEFAULT?!
         for (int i=firstRealElement; i<outputList.Count; i++)
         {
-            outputList[i].PosY += Math.Abs(currentHeight) + scrollBoxEdgePadding.y;
+            outputList[i].PosY += Math.Max(
+                Math.Abs(currentHeight) + scrollBoxEdgePadding.y,
+                scrollBox.size.y - (scrollBoxEdgePadding.y * 2) - 1f); //Why 1f off? Who knows!
             outputList[i].Change();
         }
 

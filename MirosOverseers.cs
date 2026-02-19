@@ -55,16 +55,13 @@ public partial class MirosOverseers : BaseUnityPlugin
 
     //-------------------------TODO-------------------------
     //Does eating moon force despawn iggy?
-    //How does scrollbar behave without needing to scroll?
     //Does hellish need a nerf?
     //Overseer kill count? Check DoesCreatureEarnATrophy
     //Overseers shouldn't flee at the end of cycles?
 
     //Thumbnail
 
-    //Meadow remix setting sync
-    //Meadow laser state sync
-    //Review sound loop discard issue (definite for meadow, spectator bug?)
+    //Bonus meadow todo
 
     /*-------------------------Trailer!-------------------------
 
