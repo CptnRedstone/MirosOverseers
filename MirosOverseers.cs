@@ -35,11 +35,11 @@ public partial class MirosOverseers : BaseUnityPlugin
             Logger.LogError(ex);
         }
     }
-    public void LogDebug(object data) { Logger.LogDebug(data); }
-    public void LogInfo(object data) { Logger.LogInfo(data); }
-    public void LogWarn(object data) { Logger.LogWarning(data); }
-    public void LogError(object data) { Logger.LogError(data); }
-    public void LogFatal(object data) { Logger.LogFatal(data); }
+    public static void LogDebug(object data) { modInstance.Logger.LogDebug(data); }
+    public static void LogInfo(object data) { modInstance.Logger.LogInfo(data); }
+    public static void LogWarn(object data) { modInstance.Logger.LogWarning(data); }
+    public static void LogError(object data) { modInstance.Logger.LogError(data); }
+    public static void LogFatal(object data) { modInstance.Logger.LogFatal(data); }
     private void OnEnable()
     {
         modInstance = this;
@@ -100,19 +100,19 @@ public partial class MirosOverseers : BaseUnityPlugin
             IsInit = true;
             MachineConnector.SetRegisteredOI("CaptainRedstone.MirosOverseers", optionsInstance);
         }
-        catch (Exception ex) { modInstance.LogError(ex); }
+        catch (Exception ex) { MirosOverseers.LogError(ex); }
 
-        try { IL.Explosion.Update += IL_Explosion_Update; } catch (Exception ex) { modInstance.LogError(ex); }
+        try { IL.Explosion.Update += IL_Explosion_Update; } catch (Exception ex) { MirosOverseers.LogError(ex); }
         On.Overseer.ctor += On_Overseer_Ctor;
         On.Overseer.Die += On_Overseer_Die;
         On.Overseer.Update += On_Overseer_Update;
         On.Overseer.Violence += On_Overseer_Violence;
         On.OverseerGraphics.ctor += On_OverseerGraphics_Ctor;
         On.Region.ctor_string_int_int_RainWorldGame_Timeline += HolyFunctionNameBatman;
-        try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { modInstance.LogError(ex); }
+        try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { MirosOverseers.LogError(ex); }
 
         On.WorldLoader.GeneratePopulation += OnOverseerSpawnDebug;
-        try { IL.WorldLoader.GeneratePopulation += ILOverseerSpawnDebug; } catch (Exception ex) { modInstance.LogError(ex); }
+        try { IL.WorldLoader.GeneratePopulation += ILOverseerSpawnDebug; } catch (Exception ex) { MirosOverseers.LogError(ex); }
     }
     private void RainWorldPostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
     {
@@ -125,7 +125,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             {
                 MeadowCompat.ApplyHooks();
             }
-            catch (Exception ex) { modInstance.LogError(ex); }
+            catch (Exception ex) { MirosOverseers.LogError(ex); }
         }
         else
         {
@@ -136,14 +136,14 @@ public partial class MirosOverseers : BaseUnityPlugin
     {
         orig(self, fresh);
 
-        modInstance.LogDebug("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
-        modInstance.LogDebug("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
-        modInstance.LogDebug("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
-        modInstance.LogDebug("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
-        modInstance.LogDebug("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
-        modInstance.LogDebug("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
-        modInstance.LogDebug("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
-        modInstance.LogDebug("Iggy Hates Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.angryWithPlayer);
+        MirosOverseers.LogDebug("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
+        MirosOverseers.LogDebug("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
+        MirosOverseers.LogDebug("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
+        MirosOverseers.LogDebug("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
+        MirosOverseers.LogDebug("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
+        MirosOverseers.LogDebug("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
+        MirosOverseers.LogDebug("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
+        MirosOverseers.LogDebug("Iggy Hates Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.angryWithPlayer);
     }
     private void ILOverseerSpawnDebug(ILContext il)
     {
@@ -156,9 +156,9 @@ public partial class MirosOverseers : BaseUnityPlugin
                 x => x.MatchCall(typeof(UnityEngine.Random), nameof(UnityEngine.Random.Range)),
                 x => x.MatchStloc(out loc));
             cursor.Emit(OpCodes.Ldloc_S, (byte)loc);
-            cursor.EmitDelegate(delegate(int x) { modInstance.LogInfo("Wild Overseers spawned this cycle; count is " + x); });
+            cursor.EmitDelegate(delegate(int x) { MirosOverseers.LogInfo("Wild Overseers spawned this cycle; count is " + x); });
         }
-        catch (Exception ex) { modInstance.LogError(ex); }
+        catch (Exception ex) { MirosOverseers.LogError(ex); }
     }
     private void IL_Worldloader_Generate_Population(ILContext il)
     {
@@ -171,7 +171,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.Emit(OpCodes.Pop);
             cursor.EmitDelegate(delegate () { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
         }
-        catch (Exception ex) { modInstance.LogError(ex); }
+        catch (Exception ex) { MirosOverseers.LogError(ex); }
 
         try
         {
@@ -190,7 +190,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.EmitDelegate(delegate() { return optionsInstance.GuaranteeWildOverseers.Value; });
             cursor.Emit(OpCodes.Brtrue, jump_to);
         }
-        catch (Exception ex) { modInstance.LogError(ex); }
+        catch (Exception ex) { MirosOverseers.LogError(ex); }
     }
     private void HolyFunctionNameBatman(On.Region.orig_ctor_string_int_int_RainWorldGame_Timeline orig, Region self, string name, int firstRoomIndex, int regionNumber, RainWorldGame game, SlugcatStats.Timeline timelineIndex)
     {
@@ -278,7 +278,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.Emit(OpCodes.Stloc, damage_float);
             cursor.MarkLabel(violence_label);
         }
-        catch (Exception ex) { modInstance.LogError(ex); }
+        catch (Exception ex) { MirosOverseers.LogError(ex); }
     }
 
 
@@ -350,7 +350,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             puppetExistsInRoom |= (self.room.physicalObjects[1][i] is Oracle && optionsInstance.DisableNearPuppets.Value);
         }
 
-        //modInstance.LogInfo(self.mode + " " + GetOverseerLaserCounter(self));
+        //MirosOverseers.LogInfo(self.mode + " " + GetOverseerLaserCounter(self));
         if ((self.mode == Overseer.Mode.Watching || self.mode == Overseer.Mode.Conversing || self.mode == Overseer.Mode.Projecting) && !self.dead && !inCutscene && !dialogueExistsInRoom && !puppetExistsInRoom && !playerLacksControl)
         {
             SetOverseerLaserCounter(self, GetOverseerLaserCounter(self) - 1);
