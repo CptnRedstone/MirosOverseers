@@ -1,6 +1,9 @@
-﻿using JetBrains.Annotations;
+﻿using System;
+using System.Reflection;
+using Menu;
+using MonoMod.RuntimeDetour;
 using RainMeadow;
-using System;
+using UnityEngine;
 
 namespace MirosOverseers;
 
@@ -14,26 +17,51 @@ public static class MeadowCompat
     //Static class thingy
     //Breaks in singleplayer with meadow
     //Laser light stops updating if pointed into the sky
+    public delegate RealizedPhysicalObjectState orig_GetRealizedState(
+        AbstractPhysicalObjectState self,
+        OnlinePhysicalObject onlineEntity
+    );
 
     public static readonly MirosOverseers modInstance;
+
     public static void ApplyHooks()
     {
-        On.Overseer.ctor += delegate(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
-        {
-            orig(self, abstractCreature, world);
-
-            if (OnlineManager.lobby != null)
-            {
-                abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
-            }
-        };
+        new Hook(
+            typeof(AbstractPhysicalObjectState).GetMethod(
+                "GetRealizedState",
+                BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
+            ),
+            new Func<
+                orig_GetRealizedState,
+                AbstractPhysicalObjectState,
+                OnlinePhysicalObject,
+                RealizedPhysicalObjectState
+            >(GetRealizedState_Hook)
+        );
     }
+
+    public static RealizedPhysicalObjectState GetRealizedState_Hook(
+        orig_GetRealizedState orig,
+        AbstractPhysicalObjectState self,
+        OnlinePhysicalObject onlineEntity
+    )
+    {
+        if (
+            onlineEntity is OnlineCreature oc
+            && oc.abstractCreature.creatureTemplate.type == CreatureTemplate.Type.Overseer
+        )
+        {
+            return new OnlineOverseerData(oc);
+        }
+
+        return orig(self, onlineEntity);
+    }
+
     //public static void OnOverseerCtor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
     //{
     //    orig(self, abstractCreature, world);
     //    abstractCreature.GetOnlineCreature().AddData(new OnlineOverseerData());
     //}
-
 
     //public static ConditionalWeakTable<OnlineCreature, OnlineOverseerWrapper> OnlineOverseerCwt = new();
     public class OnlineOverseerWrapper
@@ -43,43 +71,32 @@ public static class MeadowCompat
         public MirosOverseers.OverseerMirosLaser laserBeam;
     }
 
-
-    public class OnlineOverseerData : OnlineEntity.EntityData
+    public class OnlineOverseerData : RealizedOverseerState
     {
-        [UsedImplicitly]
+        [OnlineField]
+        public int LaserTimer;
+
         public OnlineOverseerData() { }
-        public override EntityDataState MakeState(OnlineEntity entity, OnlineResource inResource)
+
+        public OnlineOverseerData(OnlineCreature entity)
+            : base(entity)
         {
-            return new State(entity);
+            if (entity.realizedCreature is Overseer overseer)
+            {
+                if (MirosOverseers.OverseerCwt.TryGetValue(overseer, out _))
+                {
+                    this.LaserTimer = MirosOverseers.GetOverseerLaserCounter(overseer);
+                }
+            }
         }
-        public class State : EntityDataState
+
+        public override void ReadTo(OnlineEntity onlineEntity)
         {
-            [OnlineField]
-            public int LaserTimer;
+            base.ReadTo(onlineEntity);
 
-            [UsedImplicitly]
-            public State() { }
-            public State(OnlineEntity onlineEntity)
+            if ((onlineEntity as OnlineCreature)?.realizedCreature is Overseer overseer)
             {
-
-                //if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature && abstractCreature != null && abstractCreature.realizedCreature != null)
-                //{
-                //    if (MirosOverseers.OverseerCwt.TryGetValue(abstractCreature.realizedCreature as Overseer, out _))
-                //    {
-                //        LaserTimer = MirosOverseers.GetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer);
-                //    }
-                //}   
-            }
-            public override void ReadTo(OnlineEntity.EntityData data, OnlineEntity onlineEntity)
-            {
-                //if ((onlineEntity as OnlineCreature)?.apo is AbstractCreature abstractCreature && abstractCreature != null && abstractCreature.realizedCreature != null)
-                //{
-                //    MirosOverseers.SetOverseerLaserCounter(abstractCreature.realizedCreature as Overseer, LaserTimer);
-                //}
-            }
-            public override Type GetDataType()
-            {
-                return typeof(OnlineOverseerData);
+                MirosOverseers.SetOverseerLaserCounter(overseer, LaserTimer);
             }
         }
     }
