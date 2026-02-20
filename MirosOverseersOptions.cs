@@ -9,8 +9,6 @@ namespace MirosOverseers;
 
 public class MirosOverseersOptions : OptionInterface
 {
-    public readonly MirosOverseers modInstance;
-
     public readonly Configurable<bool> GuaranteeIggy;
     public readonly Configurable<bool> GuaranteeWildOverseers;
     public readonly Configurable<bool> AllowEarlyOverseers;
@@ -65,10 +63,8 @@ public class MirosOverseersOptions : OptionInterface
     public OpHoldButton ChallengingButton;
     public OpHoldButton HellishButton;
 
-    public MirosOverseersOptions(MirosOverseers modInstance)
+    public MirosOverseersOptions()
     {
-        this.modInstance = modInstance;
-
         GuaranteeIggy = config.Bind("GuaranteeIggy", true);
         GuaranteeWildOverseers = config.Bind("GuaranteeWildOverseers", true);
         AllowEarlyOverseers = config.Bind("AllowEarlyOverseers", true);

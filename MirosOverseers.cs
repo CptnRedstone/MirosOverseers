@@ -28,7 +28,7 @@ public partial class MirosOverseers : BaseUnityPlugin
     {
         try
         {
-            optionsInstance = new MirosOverseersOptions(this);
+            optionsInstance = new MirosOverseersOptions();
         }
         catch (Exception ex)
         {
@@ -37,7 +37,8 @@ public partial class MirosOverseers : BaseUnityPlugin
     }
     public static void LogDebug(object data) { modInstance.Logger.LogDebug(data); }
     public static void LogInfo(object data) { modInstance.Logger.LogInfo(data); }
-    public static void LogWarn(object data) { modInstance.Logger.LogWarning(data); }
+    public static void LogMessage(object data) { modInstance.Logger.LogMessage(data); }
+    public static void LogWarning(object data) { modInstance.Logger.LogWarning(data); }
     public static void LogError(object data) { modInstance.Logger.LogError(data); }
     public static void LogFatal(object data) { modInstance.Logger.LogFatal(data); }
     private void OnEnable()
@@ -62,6 +63,7 @@ public partial class MirosOverseers : BaseUnityPlugin
     //Thumbnail
 
     //Bonus meadow todo
+    //Probably should clean up hook ordering and such
 
     /*-------------------------Trailer!-------------------------
 
@@ -99,6 +101,7 @@ public partial class MirosOverseers : BaseUnityPlugin
         }
         catch (Exception ex) { MirosOverseers.LogError(ex); }
 
+        On.CreatureSymbol.DoesCreatureEarnATrophy += On_CreatureSymbol_DoesCreatureEarnATrophy;
         try { IL.Explosion.Update += IL_Explosion_Update; } catch (Exception ex) { MirosOverseers.LogError(ex); }
         On.Overseer.ctor += On_Overseer_Ctor;
         On.Overseer.Die += On_Overseer_Die;
@@ -117,16 +120,17 @@ public partial class MirosOverseers : BaseUnityPlugin
         IsMeadowEnabled = ModManager.ActiveMods.Any(x => x.id == "henpemaz_rainmeadow");
         if (IsMeadowEnabled)
         {
-            LogDebug("Rain Meadow is enabled, setting up integration...");
+            MirosOverseers.LogDebug("Rain Meadow is enabled, setting up integration...");
+            MirosOverseers.LogDebug("(You can tell Meadow's enabled since this log is already nearing 0.3mb)");
             try
             {
-                MeadowCompat.ApplyHooks();
+                MeadowCompat.InitiateMeadowCompat();
             }
             catch (Exception ex) { MirosOverseers.LogError(ex); }
         }
         else
         {
-            LogDebug("Rain Meadow isn't enabled, skipping integration...");
+            MirosOverseers.LogDebug("Rain Meadow isn't enabled, skipping integration...");
         }
     }
     private void OnOverseerSpawnDebug(On.WorldLoader.orig_GeneratePopulation orig, WorldLoader self, bool fresh)
@@ -156,6 +160,10 @@ public partial class MirosOverseers : BaseUnityPlugin
             cursor.EmitDelegate(delegate(int x) { MirosOverseers.LogInfo("Wild Overseers spawned this cycle; count is " + x); });
         }
         catch (Exception ex) { MirosOverseers.LogError(ex); }
+    }
+    private bool On_CreatureSymbol_DoesCreatureEarnATrophy(On.CreatureSymbol.orig_DoesCreatureEarnATrophy orig, CreatureTemplate.Type creature)
+    {
+        return orig(creature) || (creature == CreatureTemplate.Type.Overseer);
     }
     private void IL_Worldloader_Generate_Population(ILContext il)
     {

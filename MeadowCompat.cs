@@ -20,11 +20,9 @@ public static class MeadowCompat
         OnlineCreature onlineEntity
     );
 
-    public static readonly MirosOverseers modInstance;
-
-    public static void ApplyHooks() //Thanks for the help UO!
+    public static void InitiateMeadowCompat()
     {
-        new Hook(
+        new Hook( //Thanks for the help UO!
             typeof(AbstractCreatureState).GetMethod(
                 "GetRealizedState",
                 BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic
@@ -85,7 +83,7 @@ public static class MeadowCompat
         {
             base.ReadTo(onlineEntity);
 
-            if ((onlineEntity as OnlineCreature)?.realizedCreature is Overseer overseer)
+            if (onlineEntity is OnlineCreature { realizedCreature: Overseer overseer })
             {
                 MirosOverseers.SetOverseerLaserCounter(overseer, LaserTimer);
             }
