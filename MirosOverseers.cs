@@ -57,8 +57,6 @@ public partial class MirosOverseers : BaseUnityPlugin
     //-------------------------TODO-------------------------
     //Does eating moon force despawn iggy?
     //Does hellish need a nerf?
-    //Overseer kill count? Check DoesCreatureEarnATrophy
-    //Overseers shouldn't flee at the end of cycles?
 
     //Thumbnail
 
@@ -308,6 +306,7 @@ public partial class MirosOverseers : BaseUnityPlugin
         orig(self, abstractCreature, world);
 
         SetOverseerLaserCounter(self, 0);
+        self.abstractCreature.ignoreCycle = optionsInstance.OverseersIgnoreRain.Value;
     }
     private void On_OverseerGraphics_Ctor(On.OverseerGraphics.orig_ctor orig, OverseerGraphics self, PhysicalObject ow)
     {

@@ -21,6 +21,7 @@ public class MirosOverseersOptions : OptionInterface
     public readonly Configurable<float> OverseerFiringCooldown;
     public readonly Configurable<float> OverseerAimingDuration;
     public readonly Configurable<bool> ArtificerVulnerability;
+    public readonly Configurable<bool> OverseersIgnoreRain;
     public readonly Configurable<bool> OverseersOverseerImmune;
     public readonly Configurable<bool> OverseersSpearImmune;
     public readonly Configurable<bool> OverseersExplosionImmune;
@@ -46,6 +47,7 @@ public class MirosOverseersOptions : OptionInterface
     public OpTextBox OverseerFiringCooldownTextbox;
     public OpTextBox OverseerAimingDurationTextbox;
     public OpCheckBox ArtificerVulnerabilityCheckbox;
+    public OpCheckBox OverseersIgnoreRainCheckbox;
     public OpCheckBox OverseersOverseerImmuneCheckbox;
     public OpCheckBox OverseersSpearImmuneCheckbox;
     public OpCheckBox OverseersExplosionImmuneCheckbox;
@@ -77,6 +79,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseerFiringCooldown = config.Bind("OverseerFiringCooldown", 2f);
         OverseerAimingDuration = config.Bind("OverseerAimingDuration", 5f);
         ArtificerVulnerability = config.Bind("ArtificerVulnerability", true);
+        OverseersIgnoreRain = config.Bind("OverseersIgnoreRain", false);
         OverseersOverseerImmune = config.Bind("OverseersOverseerImmune", false);
         OverseersSpearImmune = config.Bind("OverseersSpearImmune", false);
         OverseersExplosionImmune = config.Bind("OverseersExplosionImmune", false);
@@ -101,6 +104,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseerFiringCooldownTextbox.value = "3";
         OverseerAimingDurationTextbox.value = "5";
         ArtificerVulnerabilityCheckbox.value = "false";
+        OverseersIgnoreRainCheckbox.value = "false";
         OverseersOverseerImmuneCheckbox.value = "false";
         OverseersSpearImmuneCheckbox.value = "false";
         OverseersExplosionImmuneCheckbox.value = "false";
@@ -125,6 +129,7 @@ public class MirosOverseersOptions : OptionInterface
         OverseerFiringCooldownTextbox.value = "2";
         OverseerAimingDurationTextbox.value = "5";
         ArtificerVulnerabilityCheckbox.value = "true";
+        OverseersIgnoreRainCheckbox.value = "false";
         OverseersOverseerImmuneCheckbox.value = "false";
         OverseersSpearImmuneCheckbox.value = "false";
         OverseersExplosionImmuneCheckbox.value = "false";
@@ -146,9 +151,10 @@ public class MirosOverseersOptions : OptionInterface
         OverseersMaxPlusTextbox.value = "10";
         OverseersMaxTimesTextbox.value = "3";
         OverseerReaimCooldownTextbox.value = "0.25";
-        OverseerFiringCooldownTextbox.value = "0";
-        OverseerAimingDurationTextbox.value = "3";
+        OverseerFiringCooldownTextbox.value = "1";
+        OverseerAimingDurationTextbox.value = "4";
         ArtificerVulnerabilityCheckbox.value = "true";
+        OverseersIgnoreRainCheckbox.value = "true";
         OverseersOverseerImmuneCheckbox.value = "true";
         OverseersSpearImmuneCheckbox.value = "false";
         OverseersExplosionImmuneCheckbox.value = "false";
@@ -189,7 +195,7 @@ public class MirosOverseersOptions : OptionInterface
                 HellishButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Hellish") { description = "This *will* be painful. Overseers aim dramatically faster, can't kill each other, and there are far more of them. Designed to be right on the edge of possible." },
             ],
 
-            [new OpLabel(0f, 0f, "Overseer spawning behavior:")],
+            [new OpLabel(0f, 0f, "Overseer spawning:")],
             [
                 GuaranteeIggyCheckbox = new OpCheckBox(GuaranteeIggy, 0f, 0f) { description = "Skips the %-chance for iggy to spawn per cycle, normally based on the current region." },
                 new OpLabel(0f, 0f, "Guarantee Iggy tries to spawn?") { description = "Skips the %-chance for iggy to spawn per cycle, normally based on the current region." },
@@ -230,12 +236,18 @@ public class MirosOverseersOptions : OptionInterface
                 OverseerAimingDurationTextbox = new OpTextBox(OverseerAimingDuration, new Vector2(0f, 0f), 0f) { description = "Controls how long the laser takes to fire (Miros Vultures take 4.75 seconds). Allow me to read your mind; yes this supports 0, and no that's not a good idea." },
                 new OpLabel(0f, 0f, "Aiming speed") { description = "Controls how long the laser takes to fire (Miros Vultures take 4.75 seconds). Allow me to read your mind; yes this supports 0, and no that's not a good idea." },
             ],
+
+            [new OpLabel(0f, 0f, "Overseer Behaviors:")],
             [
                 ArtificerVulnerabilityCheckbox = new OpCheckBox(ArtificerVulnerability, 0f, 0f) { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune (or technically 5x resistant) to other types of explosions." },
-                new OpLabel(0f, 0f, "Overseer lasers can kill Artificer?") { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune (or technically 5x resistant) to other types of explosions." },
+                new OpLabel(0f, 0f, "Can overseer lasers kill Artificer?") { description = "Allows overseer laser explosions to kill Artificer. Artificer will remain immune (or technically 5x resistant) to other types of explosions." },
+            ],
+            [
+                OverseersIgnoreRainCheckbox = new OpCheckBox(OverseersIgnoreRain, 0f, 0f) { description = "Prevents overseers from fleeing the death rain at the end of the cycle. Fun fact, they can actually die to the rain, you just never see it normally." },
+                new OpLabel(0f, 0f, "Do overseers ignore the rain?") { description = "Prevents overseers from fleeing the death rain at the end of the cycle. Fun fact, they can actually die to the rain, you just never see it normally." },
             ],
 
-            [new OpLabel(0f, 0f, "Overseer immunities:")],
+            [new OpLabel(0f, 0f, "Overseer Immunities:")],
             [
                 OverseersOverseerImmuneCheckbox = new OpCheckBox(OverseersOverseerImmune, 0f, 0f) { description = "Prevents overseers' explosions from damaging other overseers. Overseers are automatically immune to their own explosions." },
                 new OpLabel(0f, 0f, "Are overseers immune to each other?") { description = "Prevents overseers' explosions from damaging other overseers. Overseers are automatically immune to their own explosions." },
