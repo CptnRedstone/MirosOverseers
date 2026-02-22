@@ -11,11 +11,7 @@ namespace MirosOverseers;
 public static class MeadowCompat
 {
     //----------Bonus todo yay my favorite----------
-    //Sync remix settings
-    //Sync explosions?
-    //Lights are getting left behind...
-    //Sound loop discard issue
-    //Is onlineCreature ever not OnlineCreature?
+    //Sync explosions? Not sure if it's my problem or meadow's
     public delegate RealizedCreatureState orig_GetRealizedState(
         AbstractCreatureState self,
         OnlineCreature onlineEntity
@@ -45,13 +41,9 @@ public static class MeadowCompat
         OnlineCreature onlineCreature
     )
     {
-        if (!(onlineCreature is OnlineCreature)) { MirosOverseers.LogWarning("IF YOU SEE THIS TELL REDSTONE THE SANITY CHECK IS IMPORTANT"); }
-        if (
-            onlineCreature is OnlineCreature oc //TODO is this *ever* false?
-            && oc.abstractCreature.creatureTemplate.type == CreatureTemplate.Type.Overseer
-        )
+        if (onlineCreature != null && onlineCreature.abstractCreature.creatureTemplate.type == CreatureTemplate.Type.Overseer)
         {
-            return new OnlineOverseerData(oc);
+            return new OnlineOverseerData(onlineCreature);
         }
 
         return orig(self, onlineCreature);
@@ -110,32 +102,20 @@ public class MeadowInputData : OnlineResource.ResourceData
 
     public class State : ResourceDataState
     {
-        [OnlineField]
-        public float overseerReaimCooldown;
-        [OnlineField]
-        public float overseerFiringCooldown;
-        [OnlineField]
-        public float overseerAimingDuration;
-        [OnlineField]
-        public bool artificerVulnerability;
-        [OnlineField]
-        public bool overseersIgnoreRain;
-        [OnlineField]
-        public bool overseersOverseerImmune;
-        [OnlineField]
-        public bool overseersSpearImmune;
-        [OnlineField]
-        public bool overseersExplosionImmune;
-        [OnlineField]
-        public bool overseersImmortal;
-        [OnlineField]
-        public bool disableDuringCutscenes;
-        [OnlineField]
-        public bool disableDuringForcedInput;
-        [OnlineField]
-        public bool disableNearPuppets;
-        [OnlineField]
-        public bool disableDuringDialogue;
+        [OnlineField] public float overseerReaimCooldown;
+        [OnlineField] public float overseerFiringCooldown;
+        [OnlineField] public float overseerAimingDuration;
+        [OnlineField] public bool artificerVulnerability;
+        [OnlineField] public bool overseersIgnoreRain;
+        [OnlineField] public bool OverseersIgnoreEchoPacification;
+        [OnlineField] public bool overseersOverseerImmune;
+        [OnlineField] public bool overseersSpearImmune;
+        [OnlineField] public bool overseersExplosionImmune;
+        [OnlineField] public bool overseersImmortal;
+        [OnlineField] public bool disableDuringCutscenes;
+        [OnlineField] public bool disableDuringForcedInput;
+        [OnlineField] public bool disableNearPuppets;
+        [OnlineField] public bool disableDuringDialogue;
 
         public State()
         {
@@ -144,6 +124,7 @@ public class MeadowInputData : OnlineResource.ResourceData
             overseerAimingDuration = MirosOverseers.optionsInstance.OverseerAimingDuration.Value;
             artificerVulnerability = MirosOverseers.optionsInstance.ArtificerVulnerability.Value;
             overseersIgnoreRain = MirosOverseers.optionsInstance.OverseersIgnoreRain.Value;
+            OverseersIgnoreEchoPacification = MirosOverseers.optionsInstance.OverseersIgnoreEchoPacification.Value;
             overseersOverseerImmune = MirosOverseers.optionsInstance.OverseersOverseerImmune.Value;
             overseersSpearImmune = MirosOverseers.optionsInstance.OverseersSpearImmune.Value;
             overseersExplosionImmune = MirosOverseers.optionsInstance.OverseersExplosionImmune.Value;
@@ -161,6 +142,7 @@ public class MeadowInputData : OnlineResource.ResourceData
             MirosOverseers.optionsInstance.OverseerAimingDuration.Value = overseerAimingDuration;
             MirosOverseers.optionsInstance.ArtificerVulnerability.Value = artificerVulnerability;
             MirosOverseers.optionsInstance.OverseersIgnoreRain.Value = overseersIgnoreRain;
+            MirosOverseers.optionsInstance.OverseersIgnoreEchoPacification.Value = OverseersIgnoreEchoPacification;
             MirosOverseers.optionsInstance.OverseersOverseerImmune.Value = overseersOverseerImmune;
             MirosOverseers.optionsInstance.OverseersSpearImmune.Value = overseersSpearImmune;
             MirosOverseers.optionsInstance.OverseersExplosionImmune.Value = overseersExplosionImmune;

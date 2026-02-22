@@ -56,7 +56,7 @@ public partial class MirosOverseers : BaseUnityPlugin
 
     //-------------------------TODO-------------------------
     //Does eating moon force despawn iggy?
-    //Does hellish need a nerf?
+    //Re-test hellish
 
     //Thumbnail
 
@@ -111,6 +111,9 @@ public partial class MirosOverseers : BaseUnityPlugin
 
         On.WorldLoader.GeneratePopulation += OnOverseerSpawnDebug;
         try { IL.WorldLoader.GeneratePopulation += ILOverseerSpawnDebug; } catch (Exception ex) { MirosOverseers.LogError(ex); }
+
+        On.GhostWorldPresence.AttractionValueForCreature_AbstractRoom_Type_float += HolyOtherFunctionNameBatman;
+
     }
     private void RainWorldPostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
     {
@@ -205,6 +208,10 @@ public partial class MirosOverseers : BaseUnityPlugin
             self.regionParams.overseersMin = (int)((self.regionParams.overseersMin + optionsInstance.OverseersMinPlus.Value) * optionsInstance.OverseersMinTimes.Value);
             self.regionParams.overseersMax = (int)((self.regionParams.overseersMax + optionsInstance.OverseersMaxPlus.Value) * optionsInstance.OverseersMaxTimes.Value);
         }
+    }
+    public float HolyOtherFunctionNameBatman(On.GhostWorldPresence.orig_AttractionValueForCreature_AbstractRoom_Type_float orig, GhostWorldPresence self, AbstractRoom room, CreatureTemplate.Type tp, float defValue)
+    {
+        return (tp == CreatureTemplate.Type.Overseer && optionsInstance.OverseersIgnoreEchoPacification.Value) ? defValue : orig(self, room, tp, defValue);
     }
     public void On_Overseer_Violence(On.Overseer.orig_Violence orig, Overseer self, BodyChunk source, Vector2? directionAndMomentum, BodyChunk hitChunk, PhysicalObject.Appendage.Pos hitAppendage, Creature.DamageType type, float damage, float stunBonus)
     {
@@ -349,7 +356,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             playerLacksControl |= (self.room.PlayersInRoom[i].controller != null && optionsInstance.DisableDuringForcedInput.Value);
         }
         bool puppetExistsInRoom = false;
-        for (int i = 0; i < self.room?.physicalObjects[1].Count(); i++) //Oracles are always on collision layer 1
+        for (int i = 0; i < self.room?.physicalObjects[1].Count(); i++) //Oracles are always on collision layer 1.
         {
             puppetExistsInRoom |= (self.room.physicalObjects[1][i] is Oracle && optionsInstance.DisableNearPuppets.Value);
         }
@@ -362,18 +369,19 @@ public partial class MirosOverseers : BaseUnityPlugin
             if (GetOverseerLaserCounter(self) <= (0 - Math.Max(laserCooldownThreshold, 1)))
             {
                 SetOverseerLaserCounter(self, laserAimingDuration);
-                if (self.room != null)
-                {
-                    SetOverseerLaserLight(self, new LightSource(new Vector2(-1000f, -1000f), environmentalLight: false, new Color(0.1f, 1f, 0.1f), self));
-                    self.room.AddObject(GetOverseerLaserLight(self));
-                    GetOverseerLaserLight(self).HardSetAlpha(1f);
-                    GetOverseerLaserLight(self).HardSetRad(200f);
-                }
+            }
+            if (GetOverseerLaserCounter(self) > 0 && GetOverseerLaserLight(self) == null && self.room != null)
+            {
+                SetOverseerLaserLight(self, new LightSource(new Vector2(-1000f, -1000f), environmentalLight: false, new Color(0.1f, 1f, 0.1f), self));
+                self.room.AddObject(GetOverseerLaserLight(self));
+                GetOverseerLaserLight(self).HardSetAlpha(1f);
+                GetOverseerLaserLight(self).HardSetRad(200f);
             }
             if (GetOverseerLaserCounter(self) == 0)
             {
                 SetOverseerLaserCounter(self, (0-laserCooldownThreshold) + laserFiringCooldown);
                 GetOverseerLaserLight(self)?.Destroy();
+                SetOverseerLaserLight(self, null);
                 if (self.room == null)
                 {
                     return;
@@ -434,7 +442,7 @@ public partial class MirosOverseers : BaseUnityPlugin
                 {
                     corner = Custom.RectCollision(corner, pos, self.room.TileRect(intVector.Value)).GetCorner(FloatRect.CornerLabel.D);
                     GetOverseerLaserLight(self).HardSetPos(corner);
-                    GetOverseerLaserLight(self).HardSetRad((GetOverseerLaserCounter(self) * 200f) / laserAimingDuration);
+                    GetOverseerLaserLight(self).HardSetRad(optionsInstance.DisableLaserLightShrinking.Value ? 200f : (GetOverseerLaserCounter(self) * 200f) / laserAimingDuration);
                     GetOverseerLaserLight(self).color = new Color((laserAimingDuration - (float)GetOverseerLaserCounter(self)) / laserAimingDuration, (float)GetOverseerLaserCounter(self) / laserAimingDuration, 0.1f);
                     GetOverseerLaserLight(self).HardSetAlpha(1f);
                 }
@@ -450,6 +458,7 @@ public partial class MirosOverseers : BaseUnityPlugin
                 ? Math.Min(laserReaimCooldown - laserCooldownThreshold, 0)
                 : Math.Max(GetOverseerLaserCounter(self), Math.Min(laserReaimCooldown - laserCooldownThreshold, 0)));
             GetOverseerLaserLight(self)?.Destroy();
+            SetOverseerLaserLight(self, null);
         }
     }
     public class OverseerMirosLaser : ComplexGraphicsModule.GraphicsSubModule
@@ -484,7 +493,7 @@ public partial class MirosOverseers : BaseUnityPlugin
                 ((overseerGraphics.owner as Overseer).mode == Overseer.Mode.Watching || (overseerGraphics.owner as Overseer).mode == Overseer.Mode.Conversing || (overseerGraphics.owner as Overseer).mode == Overseer.Mode.Projecting))
                 { laserColor = new Color((laserAimingDuration - (float)GetOverseerLaserCounter(overseerGraphics.owner as Overseer)) / laserAimingDuration, (float)GetOverseerLaserCounter(overseerGraphics.owner as Overseer) / laserAimingDuration, 0.1f); }
             lastFlash = flash;
-            lastLastLookAt = lastLookAt; //Order of operations nonsense, don't worry about it
+            lastLastLookAt = lastLookAt; //Order of operations nonsense, don't worry about it.
             lastLookAt = (overseerGraphics.owner as Overseer).AI.lookAt;
             flash = Custom.LerpAndTick(flash, 0f, 0.02f, 0.025f);
 
@@ -497,7 +506,7 @@ public partial class MirosOverseers : BaseUnityPlugin
                 soundLoop.Volume = Mathf.InverseLerp(0.3f, 1f, laserActive);
                 soundLoop.Pitch = 0.2f + 0.8f * Mathf.Pow(laserActive, 0.6f);
                 soundLoop.Update();
-                if (laserActive == 0f || (overseerGraphics.owner as Overseer).dead)
+                if (laserActive == 0f || overseerGraphics == null || (overseerGraphics.owner as Overseer).dead) //TODO does this fix work
                 {
                     if (soundLoop.emitter != null)
                     {
