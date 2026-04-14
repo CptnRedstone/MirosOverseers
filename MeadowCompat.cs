@@ -32,6 +32,22 @@ public static class MeadowCompat
             >(GetRealizedState_Hook)
         );
 
+        new Hook( //Thanks for the additional help UO!
+            typeof(ArenaOnlineGameMode).GetConstructor([typeof(Lobby)]),
+            (Action<ArenaOnlineGameMode, Lobby> orig, ArenaOnlineGameMode self, Lobby lobby) =>
+            {
+                orig(self, lobby);
+                if (self.slugcatSelectDescriptions.TryGetValue(RainMeadow.RainMeadow.Ext_SlugcatStatsName.OnlineOverseerSpectator.value, out _))
+                {
+                    self.slugcatSelectDescriptions[RainMeadow.RainMeadow.Ext_SlugcatStatsName.OnlineOverseerSpectator.value] = "Observe without peril.\nFor, you *are* the peril.";
+                }
+                else
+                {
+                    MirosOverseers.LogWarning("Meadow description dictionary has no overseer key? This is either a benign outdated hook, or a sign of something going catastrophically wrong.");
+                }
+            }
+        );
+
         OnlineResource.OnAvailable += OnlineResource_OnAvailable;
     }
 

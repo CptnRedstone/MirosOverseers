@@ -32,7 +32,7 @@ public partial class MirosOverseers : BaseUnityPlugin
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex);
+            Logger.LogFatal(ex);
         }
     }
     public static void LogDebug(object data) { modInstance.Logger.LogDebug(data); }
@@ -61,7 +61,6 @@ public partial class MirosOverseers : BaseUnityPlugin
     //Thumbnail
 
     //Bonus meadow todo
-    //Probably should clean up hook ordering and such
 
     /*-------------------------Trailer!-------------------------
 
@@ -97,23 +96,20 @@ public partial class MirosOverseers : BaseUnityPlugin
             IsInit = true;
             MachineConnector.SetRegisteredOI("CaptainRedstone.MirosOverseers", optionsInstance);
         }
-        catch (Exception ex) { MirosOverseers.LogError(ex); }
+        catch (Exception ex) { MirosOverseers.LogFatal(ex); }
 
         On.CreatureSymbol.DoesCreatureEarnATrophy += On_CreatureSymbol_DoesCreatureEarnATrophy;
-        try { IL.Explosion.Update += IL_Explosion_Update; } catch (Exception ex) { MirosOverseers.LogError(ex); }
-        On.Overseer.ctor += On_Overseer_Ctor;
+        On.GhostWorldPresence.AttractionValueForCreature_AbstractRoom_Type_float += On_GhostWorldPresence_AttractionValueForCreature_AbstractRoom_Type_float; //Holy function name Batman!
+        On.Overseer.ctor += On_Overseer_ctor;
         On.Overseer.Die += On_Overseer_Die;
         On.Overseer.Update += On_Overseer_Update;
         On.Overseer.Violence += On_Overseer_Violence;
-        On.OverseerGraphics.ctor += On_OverseerGraphics_Ctor;
-        On.Region.ctor_string_int_int_RainWorldGame_Timeline += HolyFunctionNameBatman;
-        try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { MirosOverseers.LogError(ex); }
+        On.OverseerGraphics.ctor += On_OverseerGraphics_ctor;
+        On.Region.ctor_string_int_int_RainWorldGame_Timeline += On_Region_ctor_string_int_int_RainWorldGame_Timeline; //Holy other function name Batman!
+        On.WorldLoader.GeneratePopulation += On_WorldLoader_GeneratePopulation;
 
-        On.WorldLoader.GeneratePopulation += OnOverseerSpawnDebug;
-        try { IL.WorldLoader.GeneratePopulation += ILOverseerSpawnDebug; } catch (Exception ex) { MirosOverseers.LogError(ex); }
-
-        On.GhostWorldPresence.AttractionValueForCreature_AbstractRoom_Type_float += HolyOtherFunctionNameBatman;
-
+        try { IL.Explosion.Update += IL_Explosion_Update;                              } catch (Exception ex) { MirosOverseers.LogFatal(ex); }
+        try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { MirosOverseers.LogFatal(ex); }
     }
     private void RainWorldPostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
     {
@@ -121,207 +117,36 @@ public partial class MirosOverseers : BaseUnityPlugin
         IsMeadowEnabled = ModManager.ActiveMods.Any(x => x.id == "henpemaz_rainmeadow");
         if (IsMeadowEnabled)
         {
-            MirosOverseers.LogDebug("Rain Meadow is enabled, setting up integration...");
-            MirosOverseers.LogDebug("(You can tell Meadow's enabled since this log is already nearing 0.3mb)");
+            MirosOverseers.LogInfo("Rain Meadow is enabled, setting up integration...");
             try
             {
                 MeadowCompat.InitiateMeadowCompat();
             }
-            catch (Exception ex) { MirosOverseers.LogError(ex); }
+            catch (Exception ex) { MirosOverseers.LogFatal(ex); }
         }
         else
         {
-            MirosOverseers.LogDebug("Rain Meadow isn't enabled, skipping integration...");
+            MirosOverseers.LogInfo("Rain Meadow isn't enabled, skipping integration...");
         }
     }
-    private void OnOverseerSpawnDebug(On.WorldLoader.orig_GeneratePopulation orig, WorldLoader self, bool fresh)
-    {
-        orig(self, fresh);
 
-        MirosOverseers.LogDebug("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
-        MirosOverseers.LogDebug("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
-        MirosOverseers.LogDebug("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
-        MirosOverseers.LogDebug("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
-        MirosOverseers.LogDebug("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
-        MirosOverseers.LogDebug("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
-        MirosOverseers.LogDebug("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
-        MirosOverseers.LogDebug("Iggy Hates Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.angryWithPlayer);
-    }
-    private void ILOverseerSpawnDebug(ILContext il)
-    {
-        try
-        {
-            int loc = 0;
-            ILCursor cursor = new(il);
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdfld(typeof(Region.RegionParams), nameof(Region.regionParams.overseersMax)),
-                x => x.MatchCall(typeof(UnityEngine.Random), nameof(UnityEngine.Random.Range)),
-                x => x.MatchStloc(out loc));
-            cursor.Emit(OpCodes.Ldloc_S, (byte)loc);
-            cursor.EmitDelegate(delegate(int x) { MirosOverseers.LogInfo("Wild Overseers spawned this cycle; count is " + x); });
-        }
-        catch (Exception ex) { MirosOverseers.LogError(ex); }
-    }
+
+
+
     private bool On_CreatureSymbol_DoesCreatureEarnATrophy(On.CreatureSymbol.orig_DoesCreatureEarnATrophy orig, CreatureTemplate.Type creature)
     {
         return orig(creature) || (creature == CreatureTemplate.Type.Overseer);
     }
-    private void IL_Worldloader_Generate_Population(ILContext il)
-    {
-        try
-        {
-            ILCursor cursor = new(il);
-            cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21));
-            cursor.MoveAfterLabels();
-            cursor.Index++;
-            cursor.Emit(OpCodes.Pop);
-            cursor.EmitDelegate(delegate () { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
-        }
-        catch (Exception ex) { MirosOverseers.LogError(ex); }
-
-        try
-        {
-            ILCursor cursor = new(il);
-            ILLabel jump_from = cursor.DefineLabel();
-            ILLabel jump_to = cursor.DefineLabel();
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdstr("================"),
-                x => x.MatchStelemRef(),
-                x => x.MatchCall(typeof(Custom), nameof(Custom.LogImportant)));
-            cursor.MoveAfterLabels();
-            cursor.MarkLabel(jump_from);
-            cursor.GotoNext(MoveType.After, x => x.MatchRet());
-            cursor.MarkLabel(jump_to);
-            cursor.GotoLabel(jump_from);
-            cursor.EmitDelegate(delegate() { return optionsInstance.GuaranteeWildOverseers.Value; });
-            cursor.Emit(OpCodes.Brtrue, jump_to);
-        }
-        catch (Exception ex) { MirosOverseers.LogError(ex); }
-    }
-    private void HolyFunctionNameBatman(On.Region.orig_ctor_string_int_int_RainWorldGame_Timeline orig, Region self, string name, int firstRoomIndex, int regionNumber, RainWorldGame game, SlugcatStats.Timeline timelineIndex)
-    {
-        orig(self, name, firstRoomIndex, regionNumber, game, timelineIndex);
-        if (optionsInstance.GuaranteeIggy.Value) { self.regionParams.playerGuideOverseerSpawnChance = 999999999; }
-        //if (optionsInstance.GuaranteeWildOverseers.Value) { self.regionParams.overseersSpawnChance = 999999999; } //Superseded by IL
-        if (optionsInstance.AdjustOverseerSpawns.Value)
-        {
-            self.regionParams.overseersMin = (int)((self.regionParams.overseersMin + optionsInstance.OverseersMinPlus.Value) * optionsInstance.OverseersMinTimes.Value);
-            self.regionParams.overseersMax = (int)((self.regionParams.overseersMax + optionsInstance.OverseersMaxPlus.Value) * optionsInstance.OverseersMaxTimes.Value);
-        }
-    }
-    public float HolyOtherFunctionNameBatman(On.GhostWorldPresence.orig_AttractionValueForCreature_AbstractRoom_Type_float orig, GhostWorldPresence self, AbstractRoom room, CreatureTemplate.Type tp, float defValue)
+    public float On_GhostWorldPresence_AttractionValueForCreature_AbstractRoom_Type_float(On.GhostWorldPresence.orig_AttractionValueForCreature_AbstractRoom_Type_float orig, GhostWorldPresence self, AbstractRoom room, CreatureTemplate.Type tp, float defValue)
     {
         return (tp == CreatureTemplate.Type.Overseer && optionsInstance.OverseersIgnoreEchoPacification.Value) ? defValue : orig(self, room, tp, defValue);
     }
-    public void On_Overseer_Violence(On.Overseer.orig_Violence orig, Overseer self, BodyChunk source, Vector2? directionAndMomentum, BodyChunk hitChunk, PhysicalObject.Appendage.Pos hitAppendage, Creature.DamageType type, float damage, float stunBonus)
-    {
-        if (!(type == Creature.DamageType.Explosion && optionsInstance.OverseersExplosionImmune.Value))
-        {
-            orig(self, source, directionAndMomentum, hitChunk, hitAppendage, type, damage, stunBonus);
-        }
-    }
-    public void IL_Explosion_Update(ILContext il)
-    {
-        try
-        {
-            ILCursor cursor = new(il);
-            int damage_float = 0;
-
-            //Find the loop ints; I don't trust hardcoding them.
-            int loop_j = 0;
-            int loop_k = 0;
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(nameof(UpdatableAndDeletable), nameof(UpdatableAndDeletable.room)),
-                x => x.MatchLdarg(0),
-                x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.backgroundNoise)),
-                x => x.MatchCallvirt(nameof(Room), nameof(Room.MakeBackgroundNoise)));
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdcI4(0),
-                x => x.MatchStloc(out loop_j),
-                x => x.MatchBr(out _)); //Because apparently the only possible reason to match a br is to read the label.
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdcI4(0),
-                x => x.MatchStloc(out loop_k),
-                x => x.MatchBr(out _));
-
-            //if (optionsInstance.ArtificerVulnerability.Value && sourceObject is Overseer) {num8 *= 5;}
-            ILLabel stloc_label = cursor.DefineLabel();
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.damage)),
-                x => x.MatchStloc(out damage_float));
-            cursor.GotoNext(MoveType.After,
-                x => x.MatchLdloc(damage_float),
-                x => x.MatchLdcR4(0.2f),
-                x => x.MatchMul());
-            cursor.MoveAfterLabels(); //I was told this helps with mod compat.
-            cursor.EmitDelegate(delegate () { return optionsInstance.ArtificerVulnerability.Value; });
-            cursor.Emit(OpCodes.Brfalse, stloc_label);
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject))); //Thanks Yuzugamer for the help!
-            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
-            cursor.Emit(OpCodes.Brfalse, stloc_label); //Brnull
-            cursor.Emit(OpCodes.Ldc_R4, 5f);
-            cursor.Emit(OpCodes.Mul);
-            cursor.MarkLabel(stloc_label);
-
-            //if (optionsInstance.OverseersOverseerImmune.Value && sourceObject is Overseer && room.physicalObjects[j][k] is Overseer) {num8 = 0;}
-            ILLabel violence_label = cursor.DefineLabel();
-            cursor.GotoNext(MoveType.After, x => x.MatchLdarg(0)); //Conveniently we're already in a good spot, just need to pass the brfalse targets.
-            cursor.MoveAfterLabels();
-            cursor.EmitDelegate(delegate () { return optionsInstance.OverseersOverseerImmune.Value; });
-            cursor.Emit(OpCodes.Brfalse, violence_label);
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject)));
-            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
-            cursor.Emit(OpCodes.Brfalse, violence_label); //Brnull
-            cursor.Emit(OpCodes.Ldarg_0);
-            cursor.Emit(OpCodes.Ldfld, typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room)));
-            cursor.Emit(OpCodes.Ldfld, typeof(Room).GetField(nameof(Room.physicalObjects)));
-            cursor.Emit(OpCodes.Ldloc, loop_j);
-            cursor.Emit(OpCodes.Ldelem_Ref);
-            cursor.Emit(OpCodes.Ldloc, loop_k);
-            cursor.Emit(OpCodes.Callvirt, typeof(List<PhysicalObject>).GetMethod("get_Item"));
-            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
-            cursor.Emit(OpCodes.Brfalse, violence_label); //Brnull
-            cursor.Emit(OpCodes.Ldc_R4, 0f);
-            cursor.Emit(OpCodes.Stloc, damage_float);
-            cursor.MarkLabel(violence_label);
-        }
-        catch (Exception ex) { MirosOverseers.LogError(ex); }
-    }
-
-
-
-
-    public static ConditionalWeakTable<Overseer, OverseerWrapper> OverseerCwt = new();
-    public class OverseerWrapper
-    {
-        public int laserCounter;
-        public LightSource laserLight;
-        public OverseerMirosLaser laserBeam;
-    }
-    public static void SetOverseerLaserCounter(Overseer overseer, int laserCounter) { OverseerCwt.GetOrCreateValue(overseer).laserCounter = laserCounter; }
-    public static void SetOverseerLaserLight(Overseer overseer, LightSource lightSource) { OverseerCwt.GetOrCreateValue(overseer).laserLight = lightSource; }
-    public static int GetOverseerLaserCounter(Overseer overseer) { OverseerCwt.TryGetValue(overseer, out var results); return results.laserCounter; }
-    public static LightSource GetOverseerLaserLight(Overseer overseer) { OverseerCwt.TryGetValue(overseer, out var results); return results.laserLight; }
-    public static void SetOverseerLaserBeam(OverseerGraphics overseerGraphics, OverseerMirosLaser laserBeam) { OverseerCwt.GetOrCreateValue(overseerGraphics.owner as Overseer).laserBeam = laserBeam; }
-    public static OverseerMirosLaser GetOverseerLaserBeam(OverseerGraphics overseerGraphics) { OverseerCwt.TryGetValue(overseerGraphics.owner as Overseer, out var results); return results.laserBeam; }
-
-    private void On_Overseer_Ctor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
+    private void On_Overseer_ctor(On.Overseer.orig_ctor orig, Overseer self, AbstractCreature abstractCreature, World world)
     {
         orig(self, abstractCreature, world);
 
         SetOverseerLaserCounter(self, 0);
         self.abstractCreature.ignoreCycle = optionsInstance.OverseersIgnoreRain.Value;
-    }
-    private void On_OverseerGraphics_Ctor(On.OverseerGraphics.orig_ctor orig, OverseerGraphics self, PhysicalObject ow)
-    {
-        orig(self, ow);
-
-        SetOverseerLaserBeam(self, new OverseerMirosLaser(self, self.totalSprites));
-        self.AddSubModule(GetOverseerLaserBeam(self));
-        self.Reset();
     }
     private void On_Overseer_Die(On.Overseer.orig_Die orig, Overseer self)
     {
@@ -361,7 +186,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             puppetExistsInRoom |= (self.room.physicalObjects[1][i] is Oracle && optionsInstance.DisableNearPuppets.Value);
         }
 
-        //MirosOverseers.LogInfo(self.mode + " " + GetOverseerLaserCounter(self));
+        //MirosOverseers.LogDebug(self.mode + " " + GetOverseerLaserCounter(self));
         if ((self.mode == Overseer.Mode.Watching || self.mode == Overseer.Mode.Conversing || self.mode == Overseer.Mode.Projecting) && !self.dead && !inCutscene && !dialogueExistsInRoom && !puppetExistsInRoom && !playerLacksControl)
         {
             SetOverseerLaserCounter(self, GetOverseerLaserCounter(self) - 1);
@@ -379,7 +204,7 @@ public partial class MirosOverseers : BaseUnityPlugin
             }
             if (GetOverseerLaserCounter(self) == 0)
             {
-                SetOverseerLaserCounter(self, (0-laserCooldownThreshold) + laserFiringCooldown);
+                SetOverseerLaserCounter(self, (0 - laserCooldownThreshold) + laserFiringCooldown);
                 GetOverseerLaserLight(self)?.Destroy();
                 SetOverseerLaserLight(self, null);
                 if (self.room == null)
@@ -461,6 +286,182 @@ public partial class MirosOverseers : BaseUnityPlugin
             SetOverseerLaserLight(self, null);
         }
     }
+    public void On_Overseer_Violence(On.Overseer.orig_Violence orig, Overseer self, BodyChunk source, Vector2? directionAndMomentum, BodyChunk hitChunk, PhysicalObject.Appendage.Pos hitAppendage, Creature.DamageType type, float damage, float stunBonus)
+    {
+        if (!(type == Creature.DamageType.Explosion && optionsInstance.OverseersExplosionImmune.Value))
+        {
+            orig(self, source, directionAndMomentum, hitChunk, hitAppendage, type, damage, stunBonus);
+        }
+    }
+    private void On_OverseerGraphics_ctor(On.OverseerGraphics.orig_ctor orig, OverseerGraphics self, PhysicalObject ow)
+    {
+        orig(self, ow);
+
+        SetOverseerLaserBeam(self, new OverseerMirosLaser(self, self.totalSprites));
+        self.AddSubModule(GetOverseerLaserBeam(self));
+        self.Reset();
+    }
+    private void On_Region_ctor_string_int_int_RainWorldGame_Timeline(On.Region.orig_ctor_string_int_int_RainWorldGame_Timeline orig, Region self, string name, int firstRoomIndex, int regionNumber, RainWorldGame game, SlugcatStats.Timeline timelineIndex)
+    {
+        orig(self, name, firstRoomIndex, regionNumber, game, timelineIndex);
+        if (optionsInstance.GuaranteeIggy.Value) { self.regionParams.playerGuideOverseerSpawnChance = 999999999; }
+        //if (optionsInstance.GuaranteeWildOverseers.Value) { self.regionParams.overseersSpawnChance = 999999999; } //Imperfect; superseded by IL
+        if (optionsInstance.AdjustOverseerSpawns.Value)
+        {
+            self.regionParams.overseersMin = (int)((self.regionParams.overseersMin + optionsInstance.OverseersMinPlus.Value) * optionsInstance.OverseersMinTimes.Value);
+            self.regionParams.overseersMax = (int)((self.regionParams.overseersMax + optionsInstance.OverseersMaxPlus.Value) * optionsInstance.OverseersMaxTimes.Value);
+        }
+    }
+    private void On_WorldLoader_GeneratePopulation(On.WorldLoader.orig_GeneratePopulation orig, WorldLoader self, bool fresh)
+    {
+        orig(self, fresh);
+
+        MirosOverseers.LogDebug("Mod is Forcing Overseers: " + optionsInstance.GuaranteeWildOverseers.Value);
+        MirosOverseers.LogDebug("Overseer Guaranteed Region: " + (self.world.region.name == "UW" || (ModManager.MSC && (self.world.region.name == "LC" || self.world.region.name == "LM"))));
+        MirosOverseers.LogDebug("Overseer Local Spawn Chance: " + (self.world.region.regionParams.overseersSpawnChance * Mathf.InverseLerp(-1f, 21f, (self.game.session as StoryGameSession).saveState.cycleNumber + ((self.game.StoryCharacter == SlugcatStats.Name.Red) ? 17 : 1))));
+        MirosOverseers.LogDebug("\"Why is this in the game\" Exception: " + !(!ModManager.MSC || !(self.playerCharacter == MoreSlugcats.MoreSlugcatsEnums.SlugcatStatsName.Artificer) || (self.game.session as StoryGameSession).saveState.cycleNumber != 0));
+        MirosOverseers.LogDebug("Overseer Local Min Max: [" + self.world.region.regionParams.overseersMin + ", " + self.world.region.regionParams.overseersMax + "]");
+        MirosOverseers.LogDebug("Iggy's Opinion of Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.likesPlayer);
+        MirosOverseers.LogDebug("Iggy is Depressed: " + !self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.increaseLikeOnSave);
+        MirosOverseers.LogDebug("Iggy Hates Player: " + self.game.GetStorySession.saveState.miscWorldSaveData.playerGuideState.angryWithPlayer);
+    }
+
+
+
+
+    public void IL_Explosion_Update(ILContext il)
+    {
+        try
+        {
+            ILCursor cursor = new(il);
+            int damage_float = 0;
+
+            //Find the loop ints; I don't trust hardcoding them.
+            int loop_j = 0;
+            int loop_k = 0;
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(nameof(UpdatableAndDeletable), nameof(UpdatableAndDeletable.room)),
+                x => x.MatchLdarg(0),
+                x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.backgroundNoise)),
+                x => x.MatchCallvirt(nameof(Room), nameof(Room.MakeBackgroundNoise)));
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdcI4(0),
+                x => x.MatchStloc(out loop_j),
+                x => x.MatchBr(out _)); //Because apparently the only possible reason to match a br is to read the label.
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdcI4(0),
+                x => x.MatchStloc(out loop_k),
+                x => x.MatchBr(out _));
+
+            //if (optionsInstance.ArtificerVulnerability.Value && sourceObject is Overseer) {num8 *= 5;}
+            ILLabel stloc_label = cursor.DefineLabel();
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdfld(nameof(Explosion), nameof(Explosion.damage)),
+                x => x.MatchStloc(out damage_float));
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdloc(damage_float),
+                x => x.MatchLdcR4(0.2f),
+                x => x.MatchMul());
+            cursor.MoveAfterLabels(); //I was told this helps with mod compat.
+            cursor.EmitDelegate(delegate() { return optionsInstance.ArtificerVulnerability.Value; });
+            cursor.Emit(OpCodes.Brfalse, stloc_label);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject))); //Thanks Yuzugamer for the help!
+            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
+            cursor.Emit(OpCodes.Brfalse, stloc_label); //Brnull
+            cursor.Emit(OpCodes.Ldc_R4, 5f);
+            cursor.Emit(OpCodes.Mul);
+            cursor.MarkLabel(stloc_label);
+
+            //if (optionsInstance.OverseersOverseerImmune.Value && sourceObject is Overseer && room.physicalObjects[j][k] is Overseer) {num8 = 0;}
+            ILLabel violence_label = cursor.DefineLabel();
+            cursor.GotoNext(MoveType.After, x => x.MatchLdarg(0)); //Conveniently we're already in a good spot, just need to pass the brfalse targets.
+            cursor.MoveAfterLabels();
+            cursor.EmitDelegate(delegate() { return optionsInstance.OverseersOverseerImmune.Value; });
+            cursor.Emit(OpCodes.Brfalse, violence_label);
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, typeof(Explosion).GetField(nameof(Explosion.sourceObject)));
+            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
+            cursor.Emit(OpCodes.Brfalse, violence_label); //Brnull
+            cursor.Emit(OpCodes.Ldarg_0);
+            cursor.Emit(OpCodes.Ldfld, typeof(UpdatableAndDeletable).GetField(nameof(UpdatableAndDeletable.room)));
+            cursor.Emit(OpCodes.Ldfld, typeof(Room).GetField(nameof(Room.physicalObjects)));
+            cursor.Emit(OpCodes.Ldloc, loop_j);
+            cursor.Emit(OpCodes.Ldelem_Ref);
+            cursor.Emit(OpCodes.Ldloc, loop_k);
+            cursor.Emit(OpCodes.Callvirt, typeof(List<PhysicalObject>).GetMethod("get_Item"));
+            cursor.Emit(OpCodes.Isinst, typeof(Overseer));
+            cursor.Emit(OpCodes.Brfalse, violence_label); //Brnull
+            cursor.Emit(OpCodes.Ldc_R4, 0f);
+            cursor.Emit(OpCodes.Stloc, damage_float);
+            cursor.MarkLabel(violence_label);
+        }
+        catch (Exception ex) { MirosOverseers.LogFatal(ex); }
+    }
+    private void IL_Worldloader_Generate_Population(ILContext il)
+    {
+        try
+        {
+            ILCursor cursor = new(il);
+            cursor.GotoNext(MoveType.Before, x => x.MatchLdcR4(2), x => x.MatchLdcR4(21)); //TODO these need to be dynamic, not hardcoded. It's already broken once before. Stop being lazy and fix it.
+            cursor.MoveAfterLabels();
+            cursor.Index++;
+            cursor.Emit(OpCodes.Pop);
+            cursor.EmitDelegate(delegate() { return optionsInstance.AllowEarlyOverseers.Value ? -1f : 2f; });
+        }
+        catch (Exception ex) { MirosOverseers.LogFatal(ex); }
+
+        try
+        {
+            ILCursor cursor = new(il);
+            ILLabel jump_from = cursor.DefineLabel();
+            ILLabel jump_to = cursor.DefineLabel();
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdstr("================"),
+                x => x.MatchStelemRef(),
+                x => x.MatchCall(typeof(Custom), nameof(Custom.LogImportant)));
+            cursor.MoveAfterLabels();
+            cursor.MarkLabel(jump_from);
+            cursor.GotoNext(MoveType.After, x => x.MatchRet());
+            cursor.MarkLabel(jump_to);
+            cursor.GotoLabel(jump_from);
+            cursor.EmitDelegate(delegate() { return optionsInstance.GuaranteeWildOverseers.Value; });
+            cursor.Emit(OpCodes.Brtrue, jump_to);
+        }
+        catch (Exception ex) { MirosOverseers.LogFatal(ex); }
+
+        try
+        {
+            int loc = 0;
+            ILCursor cursor = new(il);
+            cursor.GotoNext(MoveType.After,
+                x => x.MatchLdfld(typeof(Region.RegionParams), nameof(Region.regionParams.overseersMax)),
+                x => x.MatchCall(typeof(UnityEngine.Random), nameof(UnityEngine.Random.Range)),
+                x => x.MatchStloc(out loc));
+            cursor.MoveAfterLabels();
+            cursor.Emit(OpCodes.Ldloc_S, (byte)loc);
+            cursor.EmitDelegate(delegate(int x) { MirosOverseers.LogMessage("Wild Overseers spawned this cycle; count is " + x); });
+        }
+        catch (Exception ex) { MirosOverseers.LogError(ex); }
+    }
+
+
+
+
+    public static ConditionalWeakTable<Overseer, OverseerWrapper> OverseerCwt = new();
+    public class OverseerWrapper
+    {
+        public int laserCounter;
+        public LightSource laserLight;
+        public OverseerMirosLaser laserBeam;
+    }
+    public static void SetOverseerLaserCounter(Overseer overseer, int laserCounter) { OverseerCwt.GetOrCreateValue(overseer).laserCounter = laserCounter; }
+    public static int GetOverseerLaserCounter(Overseer overseer) { OverseerCwt.TryGetValue(overseer, out var results); return results.laserCounter; }
+    public static void SetOverseerLaserLight(Overseer overseer, LightSource lightSource) { OverseerCwt.GetOrCreateValue(overseer).laserLight = lightSource; }
+    public static LightSource GetOverseerLaserLight(Overseer overseer) { OverseerCwt.TryGetValue(overseer, out var results); return results.laserLight; }
+    public static void SetOverseerLaserBeam(OverseerGraphics overseerGraphics, OverseerMirosLaser laserBeam) { OverseerCwt.GetOrCreateValue(overseerGraphics.owner as Overseer).laserBeam = laserBeam; }
+    public static OverseerMirosLaser GetOverseerLaserBeam(OverseerGraphics overseerGraphics) { OverseerCwt.TryGetValue(overseerGraphics.owner as Overseer, out var results); return results.laserBeam; }
     public class OverseerMirosLaser : ComplexGraphicsModule.GraphicsSubModule
     {
         private readonly OverseerGraphics overseerGraphics;

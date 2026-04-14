@@ -397,7 +397,7 @@ public class MirosOverseersOptions : OptionInterface
         }
 
 
-        //Rebind EVERYTHING from scratch because _FocusCandidateCalculate can't even get STRAIGHT LINES correct.
+        //Rebind EVERYTHING from scratch because _FocusCandidateCalculate() can't even get STRAIGHT LINES correct.
         List<List<UIfocusable>> keybinderList = [];
         for (int i = 0; i < inputList.Count; i++)
         {
@@ -446,7 +446,7 @@ public class MirosOverseersOptions : OptionInterface
         }
 
 
-        //Dear OpScrollBox... How am I supposed to define the final height of your contents BEFORE I GENERATE YOU AND YOUR CONTENTS?!
+        //Dear OpScrollBox... How am I supposed to define the final height of your contents, BEFORE I GENERATE YOU AND YOUR CONTENTS?!
         (outputList[0] as OpScrollBox).contentSize = Math.Abs(currentHeight) + (scrollBoxEdgePadding.y * 2) + outputList[firstRealElement].size.y;
         (outputList[0] as OpScrollBox).Change();
         (outputList[0] as OpScrollBox).ScrollToTop(); //WHY ISN'T THIS DEFAULT?!
