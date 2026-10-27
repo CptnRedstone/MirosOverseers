@@ -44,8 +44,8 @@ public partial class MirosOverseers : BaseUnityPlugin
     private void OnEnable()
     {
         modInstance = this;
-        On.RainWorld.OnModsInit += RainWorldOnOnModsInit;
-        On.RainWorld.PostModsInit += RainWorldPostModsInit;
+        On.RainWorld.OnModsInit += On_RainWorld_OnModsInit;
+        On.RainWorld.PostModsInit += On_RainWorld_PostModsInit;
     }
 
     //-------------------------Future ideas-------------------------
@@ -58,19 +58,17 @@ public partial class MirosOverseers : BaseUnityPlugin
     //Does eating moon force despawn iggy?
     //Re-test hellish
 
-    //Thumbnail
-
     //Bonus meadow todo
 
     /*-------------------------Trailer!-------------------------
 
     Pebbles ejecting spearmaster
-    Pebbles talking to gourmand about keeping things out
+        Pebbles talking to gourmand about keeping things out
     Pebbles talking to survivor about frolicking
-    Pebbles asking monk to tell everyone to leave
-    Scene of 500 scugs entering the puppet chamber simultaneously
+        Pebbles asking monk to tell everyone to leave
+        Scene of 500 scugs entering the puppet chamber simultaneously
     Pebblesmad.mp4
-    Survivor climbing wall, overseer appears, survivor gets blasted
+        Survivor climbing wall, overseer appears, survivor gets blasted
     Title drop (Music, probably Slaughter?)
     "Every overseer now uncontrollably shoots miros lasers!" (various clips, maybe shooting at other creatures?, maybe shooting while guiding)
     "What could possibly go wrong?" (various clips, maybe survivor intro?, maybe pipe snipes?)
@@ -80,13 +78,13 @@ public partial class MirosOverseers : BaseUnityPlugin
     Showcase disable during dialogue and visual effects; probably talking to moon would be funny
     "Lore implications...?" (scav fighting overseer)
     "Rain Meadow synced!" (meadow clips)
-    "Download now!" (jumping scug at scav toll)
+    "Download now! (please I spent way too much time on this)" (jumping scug at scav toll)
     "You'll have a *blast*!" (music cuts, scug gets stabbed by a toll scav, then tons of overseers appear and nuke everything)
 
     */
 
     private bool IsInit;
-    private void RainWorldOnOnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
+    private void On_RainWorld_OnModsInit(On.RainWorld.orig_OnModsInit orig, RainWorld self)
     {
         orig(self);
         if (IsInit) return;
@@ -111,7 +109,7 @@ public partial class MirosOverseers : BaseUnityPlugin
         try { IL.Explosion.Update += IL_Explosion_Update;                              } catch (Exception ex) { MirosOverseers.LogFatal(ex); }
         try { IL.WorldLoader.GeneratePopulation += IL_Worldloader_Generate_Population; } catch (Exception ex) { MirosOverseers.LogFatal(ex); }
     }
-    private void RainWorldPostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
+    private void On_RainWorld_PostModsInit(On.RainWorld.orig_PostModsInit orig, RainWorld self)
     {
         orig(self);
         IsMeadowEnabled = ModManager.ActiveMods.Any(x => x.id == "henpemaz_rainmeadow");
@@ -187,6 +185,7 @@ public partial class MirosOverseers : BaseUnityPlugin
         }
 
         //MirosOverseers.LogDebug(self.mode + " " + GetOverseerLaserCounter(self));
+
         if ((self.mode == Overseer.Mode.Watching || self.mode == Overseer.Mode.Conversing || self.mode == Overseer.Mode.Projecting) && !self.dead && !inCutscene && !dialogueExistsInRoom && !puppetExistsInRoom && !playerLacksControl)
         {
             SetOverseerLaserCounter(self, GetOverseerLaserCounter(self) - 1);

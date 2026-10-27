@@ -68,6 +68,7 @@ public class MirosOverseersOptions : OptionInterface
     public OpHoldButton RelaxedButton;
     public OpHoldButton ChallengingButton;
     public OpHoldButton HellishButton;
+    public OpHoldButton SoftDisableButton;
 
     public MirosOverseersOptions()
     {
@@ -174,6 +175,22 @@ public class MirosOverseersOptions : OptionInterface
         DisableNearPuppetsCheckbox.value = "false";
         DisableDuringDialogueCheckbox.value = "false";
     }
+    public void SetSoftDisable(UIfocusable trigger)
+    {
+        //Lots of stuff doesn't need to be toggled here, too much to comment on.
+        GuaranteeIggyCheckbox.value = "false";
+        GuaranteeWildOverseersCheckbox.value = "false";
+        AllowEarlyOverseersCheckbox.value = "false";
+        AdjustOverseerSpawnsCheckbox.value = "false";
+        OverseerReaimCooldownTextbox.value = "2147483647"; //Even though the textbox only displays 2147 it seems to store the value fine. If 1.7 years isn't enough for you, I think that's no longer my problem.
+        OverseerFiringCooldownTextbox.value = "2147483647";
+        OverseerAimingDurationTextbox.value = "2147483647";
+        OverseersIgnoreRainCheckbox.value = "false";
+        OverseersIgnoreEchoPacificationCheckbox.value = "false";
+        OverseersSpearImmuneCheckbox.value = "false";
+        OverseersExplosionImmuneCheckbox.value = "false";
+        OverseersImmortalCheckbox.value = "false";
+    }
     public void ToggleSpawnrateTextboxes()
     {
         OverseersMinPlusTextbox.greyedOut = !AdjustOverseerSpawnsCheckbox.GetValueBool();
@@ -202,6 +219,7 @@ public class MirosOverseersOptions : OptionInterface
                 RelaxedButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Relaxed") { description = "Leaves overseer spawnrates default, and enables some safeties; designed for newer players, or for use with other mods." },
                 ChallengingButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Challenging") { description = "The intended (and default) experience; increases overseer spawnrates to give experienced players an interesting but mostly™ fair challenge." },
                 HellishButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Hellish") { description = "This *will* be painful. Overseers are more dangerous, persistent, and plentiful, and can't hurt each other. Designed to be right on the edge of possible." },
+                SoftDisableButton = new OpHoldButton(new Vector2(0f, 0f), new Vector2(0f, 0f), "Soft-Disable") { description = "Alters settings in a way that effectively disables the mod's functionality, without having to restart the game." },
             ],
 
             [new OpLabel(0f, 0f, "Overseer spawning:")],
@@ -228,8 +246,8 @@ public class MirosOverseersOptions : OptionInterface
             ],
             [
                 OverseersMaxPlusTextbox = new OpTextBox(OverseersMaxPlus, new Vector2(0f, 0f), 0f) { description = "Adjusts the maximum number of \"wild\" overseers that can spawn per cycle. The first value adds to the current region, then the second value multiplies it." },
-                OverseersMaxTimesTextbox = new OpTextBox(OverseersMaxTimes, new Vector2(0f, 0f), 0f) { description = "Adjusts the minimum number of \"wild\" overseers that can spawn per cycle. The first value adds to the current region, then the second value multiplies it." },
-                new OpLabel(0f, 0f, "Maximum overseers: +X, then *Y") { description = "Adjusts the minimum number of \"wild\" overseers that can spawn per cycle. The first value adds to the current region, then the second value multiplies it." },
+                OverseersMaxTimesTextbox = new OpTextBox(OverseersMaxTimes, new Vector2(0f, 0f), 0f) { description = "Adjusts the maximum number of \"wild\" overseers that can spawn per cycle. The first value adds to the current region, then the second value multiplies it." },
+                new OpLabel(0f, 0f, "Maximum overseers: +X, then *Y") { description = "Adjusts the maximum number of \"wild\" overseers that can spawn per cycle. The first value adds to the current region, then the second value multiplies it." },
             ],
 
             [new OpLabel(0f, 0f, "Laser statistics (in seconds):")],
@@ -262,16 +280,16 @@ public class MirosOverseersOptions : OptionInterface
 
             [new OpLabel(0f, 0f, "Overseer Immunities:")],
             [
-                OverseersOverseerImmuneCheckbox = new OpCheckBox(OverseersOverseerImmune, 0f, 0f) { description = "Prevents overseers' explosions from damaging other overseers. Overseers are automatically immune to their own explosions." },
-                new OpLabel(0f, 0f, "Are overseers immune to each other?") { description = "Prevents overseers' explosions from damaging other overseers. Overseers are automatically immune to their own explosions." },
+                OverseersOverseerImmuneCheckbox = new OpCheckBox(OverseersOverseerImmune, 0f, 0f) { description = "Prevents overseers' explosions from damaging other overseers. Overseers are always immune to their own explosions regardless of this setting." },
+                new OpLabel(0f, 0f, "Are overseers immune to each other?") { description = "Prevents overseers' explosions from damaging other overseers. Overseers are always immune to their own explosions regardless of this setting." },
             ],
             [
                 OverseersSpearImmuneCheckbox = new OpCheckBox(OverseersSpearImmune, 0f, 0f) { description = "Makes all overseers immune to rocks, spears, and any other similar thrown weapons. Spearmaster's red Iggy (Riggy?) is immune to spears by default." },
                 new OpLabel(0f, 0f, "Are overseers immune to spears?") { description = "Makes all overseers immune to rocks, spears, and any other similar thrown weapons. Spearmaster's red Iggy (Riggy?) is immune to spears by default." },
             ],
             [
-                OverseersExplosionImmuneCheckbox = new OpCheckBox(OverseersExplosionImmune, 0f, 0f) { description = "Makes all overseers immune to all explosion damage. Overseers are automatically immune to their own explosions, but not other overseers' explosions." },
-                new OpLabel(0f, 0f, "Are overseers immune to explosions?") { description = "Makes overseers immune to all explosion damage. Overseers are automatically immune to their own explosions, but not other overseers' explosions." },
+                OverseersExplosionImmuneCheckbox = new OpCheckBox(OverseersExplosionImmune, 0f, 0f) { description = "Makes overseers immune to all forms of explosion damage. Overseers are always immune to their own explosions regardless of this setting." },
+                new OpLabel(0f, 0f, "Are overseers immune to explosions?") { description = "Makes overseers immune to all forms of explosion damage. Overseers are always immune to their own explosions regardless of this setting." },
             ],
             [
                 OverseersImmortalCheckbox = new OpCheckBox(OverseersImmortal, 0f, 0f) { description = "Makes all overseers completely immortal, for all you masochists out there." },
@@ -302,8 +320,8 @@ public class MirosOverseersOptions : OptionInterface
 
             [new OpLabel(0f, 0f, "Exceptions/Safeties:")],
             [
-                DisableDuringCutscenesCheckbox = new OpCheckBox(DisableDuringCutscenes, 0f, 0f) { description = "THIS ONLY WORKS WITH JOLLY ENABLED. Yeah, no clue why they did it that way.\nDisables lasers during \"cutscenes\", as defined by Jolly; stuff like meeting Pebbles, the facility roots transition, or placing the rarefaction cell." },
-                new OpLabel(0f, 0f, "Disable lasers during during \"cutscenes\"?") { description = "THIS ONLY WORKS WITH JOLLY ENABLED. Yeah, no clue why they did it that way.\nDisables lasers during \"cutscenes\", as defined by Jolly; stuff like meeting Pebbles, the facility roots transition, or placing the rarefaction cell." },
+                DisableDuringCutscenesCheckbox = new OpCheckBox(DisableDuringCutscenes, 0f, 0f) { description = "THIS ONLY WORKS WITH JOLLY ENABLED. Yeah, no clue why they did it that way.\nDisables lasers during \"cutscenes\", as defined by Jolly Coop; stuff like meeting Pebbles, the facility roots transition, or placing the rarefaction cell." },
+                new OpLabel(0f, 0f, "Disable lasers during during \"cutscenes\"?") { description = "THIS ONLY WORKS WITH JOLLY ENABLED. Yeah, no clue why they did it that way.\nDisables lasers during \"cutscenes\", as defined by Jolly Coop; stuff like meeting Pebbles, the facility roots transition, or placing the rarefaction cell." },
             ],
             [
                 DisableDuringForcedInputCheckbox = new OpCheckBox(DisableDuringForcedInput, 0f, 0f) { description = "Disables lasers any time your avatar is loaded into the game, but they're controlled by something other than you. For instance, the Hunter/Artificer intros." },
@@ -318,19 +336,20 @@ public class MirosOverseersOptions : OptionInterface
                 new OpLabel(0f, 0f, "Disable lasers during dialogue?") { description = "Disables lasers when any dialogue box is onscreen." },
             ],
         ];
-        opTab.AddItems(BuildUIElements(UnbuiltPlayerOptions));
+        opTab.AddItems(BuildRemixElements(UnbuiltPlayerOptions));
 
         RelaxedButton.OnPressDone += SetRelaxed;
         ChallengingButton.OnPressDone += SetChallenging;
         HellishButton.OnPressDone += SetHellish;
+        SoftDisableButton.OnPressDone += SetSoftDisable;
 
-        AdjustOverseerSpawnsCheckbox.OnChange += ToggleSpawnrateTextboxes;
+        AdjustOverseerSpawnsCheckbox.OnChange   += ToggleSpawnrateTextboxes;
         GuaranteeWildOverseersCheckbox.OnChange += UpdateAllowEarlyOverseers;
 
         UpdateAllowEarlyOverseers();
         UpdateDisableDuringCutscenes();
     }
-    public UIelement[] BuildUIElements(List<List<UIelement>> inputList, bool includeTitle = true)
+    public UIelement[] BuildRemixElements(List<List<UIelement>> inputList, bool includeTitle = true)
     {
         static int RealModulo(int dividend, int divisor)
         {
